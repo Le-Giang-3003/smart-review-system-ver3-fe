@@ -122,8 +122,8 @@ export const schedulingService = {
     apiClient.post<ApiResponse<null>>(`/scheduling/${reviewPeriodId}/approve`),
   reject: (reviewPeriodId: number, reason: string) =>
     apiClient.post<ApiResponse<null>>(`/scheduling/${reviewPeriodId}/reject`, { reason }),
-  regenerateSlot: (slotId: number, reason?: string) =>
-    apiClient.post<ApiResponse<ScheduleResult>>(`/scheduling/slots/${slotId}/regenerate`, { slotId, reason }),
-  regenerateGroup: (groupId: number, reason?: string) =>
-    apiClient.post<ApiResponse<ScheduleResult>>(`/scheduling/groups/${groupId}/regenerate`, { groupId, reason }),
+  regenerateSlot: (reviewPeriodId: number, slotId: number, reason?: string) =>
+    apiClient.post<ApiResponse<ScheduleResult>>(`/scheduling/slots/${slotId}/regenerate`, { reviewPeriodId, slotId, reason }),
+  regenerateGroup: (reviewPeriodId: number, groupId: number, reason?: string) =>
+    apiClient.post<ApiResponse<ScheduleResult>>(`/scheduling/groups/${groupId}/regenerate`, { reviewPeriodId, groupId, reason }),
 }
