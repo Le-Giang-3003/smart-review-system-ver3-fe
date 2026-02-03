@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Table, Button, Modal, Form, Select, Input, message, Tabs } from 'antd'
+import { Table, Button, Modal, Form, Select, Input, App, Tabs } from 'antd'
 import { LinkOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { lecturerService, semesterService } from '@/api/admin.service'
@@ -14,6 +14,7 @@ export const LecturersPage = () => {
   const [loadForm] = Form.useForm()
   const [selectedLecturerId, setSelectedLecturerId] = useState<number | null>(null)
   const queryClient = useQueryClient()
+  const { modal, message } = App.useApp()
 
   const { data: lecturers = [], isLoading } = useQuery({
     queryKey: ['lecturers'],
@@ -140,7 +141,7 @@ export const LecturersPage = () => {
           danger
           size="small"
           onClick={() => {
-            Modal.confirm({
+            modal.confirm({
               title: 'Xóa tương thích?',
               onOk: () => deleteCompatMutation.mutate(record.id),
             })

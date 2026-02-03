@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Table, Button, Space, Modal, Form, Input, message } from 'antd'
+import { Table, Button, Space, Modal, Form, Input, App } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { tagService } from '@/api/admin.service'
@@ -11,6 +11,7 @@ export const TagsPage = () => {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [form] = Form.useForm()
   const queryClient = useQueryClient()
+  const { modal, message } = App.useApp()
 
   const { data: tags = [], isLoading } = useQuery({
     queryKey: ['tags'],
@@ -110,7 +111,7 @@ export const TagsPage = () => {
             danger
             icon={<DeleteOutlined />}
             onClick={() => {
-              Modal.confirm({
+              modal.confirm({
                 title: 'Xác nhận xóa',
                 content: `Xóa tag "${record.name}"?`,
                 onOk: () => deleteMutation.mutate(record.id),

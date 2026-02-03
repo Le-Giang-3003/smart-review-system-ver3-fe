@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Table, Button, Space, Modal, Form, Input, InputNumber, DatePicker, Select, message } from 'antd'
+import { Table, Button, Space, Modal, Form, Input, InputNumber, DatePicker, Select, App } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
@@ -14,6 +14,7 @@ export const ReviewSlotsPage = () => {
   const [periodFilter, setPeriodFilter] = useState<number | undefined>()
   const [form] = Form.useForm()
   const queryClient = useQueryClient()
+  const { modal, message } = App.useApp()
 
   const { data: periods = [] } = useQuery({
     queryKey: ['review-periods'],
@@ -141,7 +142,7 @@ export const ReviewSlotsPage = () => {
             danger
             icon={<DeleteOutlined />}
             onClick={() => {
-              Modal.confirm({
+              modal.confirm({
                 title: 'Xác nhận xóa',
                 content: 'Xóa slot này?',
                 onOk: () => deleteMutation.mutate(record.id),

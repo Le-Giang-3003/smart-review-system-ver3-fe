@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom'
-import { ConfigProvider } from 'antd'
+import { ConfigProvider, App as AntApp } from 'antd'
 import { appTheme } from '@/styles/theme'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { LoginPage } from '@/pages/auth/LoginPage'
@@ -51,9 +51,10 @@ const getStudentMenuItems = (navigate: (path: string) => void): MenuProps['items
 function App() {
   return (
     <ConfigProvider theme={appTheme}>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <Routes>
+      <AntApp>
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            <Routes>
             <Route path={ROUTES.LOGIN} element={<LoginPage />} />
             <Route
               path="/admin"
@@ -101,9 +102,10 @@ function App() {
             </Route>
             <Route path="/" element={<Navigate to={ROUTES.LOGIN} replace />} />
             <Route path="*" element={<Navigate to={ROUTES.LOGIN} replace />} />
-          </Routes>
-        </BrowserRouter>
-      </QueryClientProvider>
+            </Routes>
+          </BrowserRouter>
+        </QueryClientProvider>
+      </AntApp>
     </ConfigProvider>
   )
 }

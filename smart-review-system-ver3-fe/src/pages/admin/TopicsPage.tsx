@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Table, Button, Space, Modal, Form, Input, InputNumber, Select, message } from 'antd'
+import { Table, Button, Space, Modal, Form, Input, InputNumber, Select, App } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, TagsOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { topicService, tagService } from '@/api/admin.service'
@@ -15,6 +15,7 @@ export const TopicsPage = () => {
   const [form] = Form.useForm()
   const [tagForm] = Form.useForm()
   const queryClient = useQueryClient()
+  const { modal, message } = App.useApp()
 
   const { data: topics = [], isLoading } = useQuery({
     queryKey: ['topics'],
@@ -178,7 +179,7 @@ export const TopicsPage = () => {
             danger
             icon={<DeleteOutlined />}
             onClick={() => {
-              Modal.confirm({
+              modal.confirm({
                 title: 'Xác nhận xóa',
                 content: `Xóa đề tài "${record.title}"?`,
                 onOk: () => deleteMutation.mutate(record.id),
