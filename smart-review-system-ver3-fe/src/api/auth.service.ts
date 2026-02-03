@@ -9,7 +9,7 @@ export interface LoginRequest {
 
 export const authService = {
   login: async (data: LoginRequest) => {
-    const response = await apiClient.post<ApiResponse<LoginResponse>>('/auth/login', data)
+    const response = await apiClient.post<ApiResponse<LoginResponse>>('api/auth/login', data)
     return response.data
   },
 
