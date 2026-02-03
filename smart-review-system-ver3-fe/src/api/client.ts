@@ -1,7 +1,7 @@
 import axios, { type AxiosError } from 'axios'
 import { STORAGE_KEYS } from '@/constants'
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || '/api'
+const baseURL = import.meta.env.VITE_API_BASE_URL
 
 export const apiClient = axios.create({
   baseURL,
@@ -27,7 +27,7 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem(STORAGE_KEYS.TOKEN)
       localStorage.removeItem(STORAGE_KEYS.USER)
-      window.location.href = '/login'
+    window.dispatchEvent(new Event('unauthorized'))
     }
     return Promise.reject(error)
   }
