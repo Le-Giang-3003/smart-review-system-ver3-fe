@@ -31,11 +31,12 @@ export const SchedulingPage = () => {
         message.error(res.data.message || 'Tạo lịch thất bại')
       }
     },
-    onError: (error: { response?: { data?: { data?: ScheduleResult } } }) => {
+    onError: (error: { response?: { data?: { message?: string; data?: ScheduleResult } } }) => {
       if (error.response?.data?.data) {
         setScheduleResult(error.response.data.data)
       }
-      message.error('Tạo lịch thất bại')
+      const errorMessage = error.response?.data?.message || 'Tạo lịch thất bại'
+      message.error(errorMessage)
     },
   })
 
