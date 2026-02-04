@@ -18,6 +18,7 @@ import { LecturerDashboard } from '@/pages/lecturer/LecturerDashboard'
 import { StudentDashboard } from '@/pages/student/StudentDashboard'
 import { ProfilePage } from '@/pages/profile/ProfilePage'
 import { ROUTES } from '@/constants'
+import { useAuthStore } from '@/stores/authStore'
 import type { MenuProps } from 'antd'
 
 const queryClient = new QueryClient({
@@ -48,6 +49,29 @@ const getLecturerMenuItems = (navigate: (path: string) => void): MenuProps['item
 const getStudentMenuItems = (navigate: (path: string) => void): MenuProps['items'] => [
   { key: '/student', icon: null, label: 'Tổng quan', onClick: () => navigate('/student') },
 ]
+
+const ProfileWithLayout = () => {
+  const user = useAuthStore((state) => state.user)
+
+  const getMenuItems = () => {
+    switch (user?.role) {
+      case 'Admin':
+        return getAdminMenuItems
+      case 'Lecturer':
+        return getLecturerMenuItems
+      case 'Student':
+        return getStudentMenuItems
+      default:
+        return getStudentMenuItems
+    }
+  }
+
+  return (
+    <MainLayout menuItems={getMenuItems()}>
+      <ProfilePage />
+    </MainLayout>
+  )
+}
 
 function App() {
   return (
@@ -105,7 +129,7 @@ function App() {
               path="/profile"
               element={
                 <ProtectedRoute allowedRoles={['Admin', 'Lecturer', 'Student']}>
-                  <ProfilePage />
+                  <ProfileWithLayout />
                 </ProtectedRoute>
               }
             />

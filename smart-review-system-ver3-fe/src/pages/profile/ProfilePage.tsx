@@ -1,8 +1,10 @@
-import { Card, Descriptions, Spin, Tag, Avatar } from 'antd'
-import { UserOutlined } from '@ant-design/icons'
+import { Card, Descriptions, Spin, Tag, Avatar, Button } from 'antd'
+import { UserOutlined, ArrowLeftOutlined } from '@ant-design/icons'
 import { useQuery } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import { authService } from '@/api/auth.service'
 import { PageWrapper } from '@/components/common/PageWrapper'
+import { useAuth } from '@/hooks/useAuth'
 
 const getRoleColor = (role: string) => {
   switch (role) {
@@ -31,6 +33,9 @@ const getRoleLabel = (role: string) => {
 }
 
 export const ProfilePage = () => {
+  const navigate = useNavigate()
+  const { user } = useAuth()
+
   const { data, isLoading } = useQuery({
     queryKey: ['current-user'],
     queryFn: async () => {
@@ -39,9 +44,31 @@ export const ProfilePage = () => {
     },
   })
 
+  const getBackPath = () => {
+    switch (user?.role) {
+      case 'Admin':
+        return '/admin'
+      case 'Lecturer':
+        return '/lecturer'
+      case 'Student':
+        return '/student'
+      default:
+        return '/'
+    }
+  }
+
+  const backButton = (
+    <Button
+      icon={<ArrowLeftOutlined />}
+      onClick={() => navigate(getBackPath())}
+    >
+      Quay lại
+    </Button>
+  )
+
   if (isLoading) {
     return (
-      <PageWrapper title="Hồ sơ cá nhân">
+      <PageWrapper title="Hồ sơ cá nhân" extra={backButton}>
         <div style={{ textAlign: 'center', padding: 50 }}>
           <Spin size="large" />
         </div>
@@ -50,7 +77,7 @@ export const ProfilePage = () => {
   }
 
   return (
-    <PageWrapper title="Hồ sơ cá nhân">
+    <PageWrapper title="Hồ sơ cá nhân" extra={backButton}>
       <Card>
         <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 24 }}>
           <Avatar size={80} icon={<UserOutlined />} />
