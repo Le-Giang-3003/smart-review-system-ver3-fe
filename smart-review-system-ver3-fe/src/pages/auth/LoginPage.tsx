@@ -175,19 +175,11 @@ export const LoginPage = () => {
           </Form.Item>
         </Form>
 
-        {/* Demo credentials */}
-        <div
-          style={{
-            textAlign: 'center',
-            padding: '12px 16px',
-            background: '#f6f8fa',
-            borderRadius: 8,
-            marginTop: 8,
-          }}
-        >
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            Demo: <Text code style={{ fontSize: 11 }}>admin@test.com</Text> / <Text code style={{ fontSize: 11 }}>123456</Text>
-          </Text>
+        {/* Forgot password */}
+        <div style={{ textAlign: 'center', marginTop: 16 }}>
+          <Button type="link" style={{ padding: 0, fontSize: 14 }}>
+            Quên mật khẩu?
+          </Button>
         </div>
       </div>
     </div>
