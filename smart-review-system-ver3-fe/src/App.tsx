@@ -16,6 +16,7 @@ import { ReviewSessionsPage } from '@/pages/admin/ReviewSessionsPage'
 import { SchedulingPage } from '@/pages/admin/SchedulingPage'
 import { LecturerDashboard } from '@/pages/lecturer/LecturerDashboard'
 import { StudentDashboard } from '@/pages/student/StudentDashboard'
+import { ProfilePage } from '@/pages/profile/ProfilePage'
 import { ROUTES } from '@/constants'
 import type { MenuProps } from 'antd'
 
@@ -100,6 +101,14 @@ function App() {
             >
               <Route index element={<StudentDashboard />} />
             </Route>
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute allowedRoles={['Admin', 'Lecturer', 'Student']}>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/" element={<Navigate to={ROUTES.LOGIN} replace />} />
             <Route path="*" element={<Navigate to={ROUTES.LOGIN} replace />} />
             </Routes>
