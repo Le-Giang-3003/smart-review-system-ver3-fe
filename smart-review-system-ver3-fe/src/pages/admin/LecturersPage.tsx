@@ -1,18 +1,29 @@
-import { useState } from 'react'
-import { Table, Button, Modal, Form, Select, Input, App, Tabs } from 'antd'
-import { LinkOutlined } from '@ant-design/icons'
+import { useState, useRef } from 'react'
+import { Table, Button, Space, Modal, Form, Select, Input, App, Tabs, Tag, Row, Col } from 'antd'
+import { 
+  PlusOutlined, EditOutlined, DeleteOutlined, 
+  LinkOutlined, UploadOutlined, BuildOutlined 
+} from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { lecturerService, semesterService } from '@/api/admin.service'
+import { lecturerService } from '@/api/admin.service'
 import { COMPATIBILITY_TYPE_LABELS } from '@/constants'
 import { PageWrapper } from '@/components/common/PageWrapper'
-import type { LecturerCompatibility } from '@/types/entities'
+import type { Lecturer, LecturerCompatibility } from '@/types/entities'
 
 export const LecturersPage = () => {
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editingId, setEditingId] = useState<number | null>(null)
+  
   const [compatModalOpen, setCompatModalOpen] = useState(false)
   const [loadModalOpen, setLoadModalOpen] = useState(false)
-  const [form] = Form.useForm()
-  const [loadForm] = Form.useForm()
   const [selectedLecturerId, setSelectedLecturerId] = useState<number | null>(null)
+  
+  const [form] = Form.useForm()
+  const [compatForm] = Form.useForm()
+  const [loadForm] = Form.useForm()
+  
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  
   const queryClient = useQueryClient()
   const { modal, message } = App.useApp()
 
@@ -20,15 +31,7 @@ export const LecturersPage = () => {
     queryKey: ['lecturers'],
     queryFn: async () => {
       const res = await lecturerService.getAll()
-      return res.data.data ?? []
-    },
-  })
-
-  const { data: semesters = [] } = useQuery({
-    queryKey: ['semesters'],
-    queryFn: async () => {
-      const res = await semesterService.getAll()
-      return res.data.data ?? []
+      return res.data?.data?.items || res.data?.data || [] // Support paginated or array
     },
   })
 
@@ -40,6 +43,65 @@ export const LecturersPage = () => {
     },
   })
 
+  // Mutations
+  const createMutation = useMutation({
+    mutationFn: lecturerService.create,
+    onSuccess: (res) => {
+      if (res.data.isSuccess) {
+        message.success('Thêm giảng viên thành công')
+        queryClient.invalidateQueries({ queryKey: ['lecturers'] })
+        setModalOpen(false)
+        form.resetFields()
+      } else {
+        message.error(res.data.message)
+      }
+    },
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
+      lecturerService.update(id, data),
+    onSuccess: (res) => {
+      if (res.data.isSuccess) {
+        message.success('Cập nhật thành công')
+        queryClient.invalidateQueries({ queryKey: ['lecturers'] })
+        setModalOpen(false)
+        setEditingId(null)
+      } else {
+        message.error(res.data.message)
+      }
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: lecturerService.delete,
+    onSuccess: (res) => {
+      if (res.data.isSuccess) {
+        message.success('Xóa thành công')
+        queryClient.invalidateQueries({ queryKey: ['lecturers'] })
+      } else {
+        message.error(res.data.message)
+      }
+    },
+  })
+
+  const importMutation = useMutation({
+    mutationFn: lecturerService.import,
+    onSuccess: (res) => {
+      if (res.data.isSuccess) {
+        message.success('Import thành công')
+        queryClient.invalidateQueries({ queryKey: ['lecturers'] })
+      } else {
+        message.error(res.data.message)
+      }
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    },
+    onError: () => {
+      message.error('Có lỗi xảy ra khi import')
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  })
+
   const createCompatMutation = useMutation({
     mutationFn: lecturerService.createCompatibility,
     onSuccess: (res) => {
@@ -47,7 +109,7 @@ export const LecturersPage = () => {
         message.success('Thêm tương thích thành công')
         queryClient.invalidateQueries({ queryKey: ['lecturer-compatibilities'] })
         setCompatModalOpen(false)
-        form.resetFields()
+        compatForm.resetFields()
       } else {
         message.error(res.data.message)
       }
@@ -58,7 +120,7 @@ export const LecturersPage = () => {
     mutationFn: lecturerService.deleteCompatibility,
     onSuccess: (res) => {
       if (res.data.isSuccess) {
-        message.success('Xóa thành công')
+        message.success('Xóa tương thích thành công')
         queryClient.invalidateQueries({ queryKey: ['lecturer-compatibilities'] })
       } else {
         message.error(res.data.message)
@@ -81,12 +143,54 @@ export const LecturersPage = () => {
     },
   })
 
-  const onCompatSubmit = () => {
+  // Handlers
+  const openCreate = () => {
+    form.resetFields()
+    form.setFieldsValue({ minTopics: 0, maxTopics: 3 })
+    setEditingId(null)
+    setModalOpen(true)
+  }
+
+  const openEdit = (record: Lecturer) => {
+    form.setFieldsValue({
+      fullName: record.fullName,
+      email: record.email,
+      phoneNumber: record.phoneNumber,
+      lecturerCode: record.lecturerCode,
+      department: record.department,
+      minTopics: record.minTopics,
+      maxTopics: record.maxTopics,
+      expertises: record.expertises?.join(', '), // Assuming we accept comma-separated strings in UI for expertises for simplicity
+    })
+    setEditingId(record.id)
+    setModalOpen(true)
+  }
+
+  const onSubmit = () => {
     form.validateFields().then((values) => {
+      const payload = {
+        fullName: values.fullName,
+        email: values.email,
+        phoneNumber: values.phoneNumber,
+        lecturerCode: values.lecturerCode,
+        department: values.department,
+        minTopics: Number(values.minTopics),
+        maxTopics: Number(values.maxTopics),
+      }
+      if (editingId) {
+        updateMutation.mutate({ id: editingId, data: payload })
+      } else {
+        createMutation.mutate(payload)
+      }
+    })
+  }
+
+  const onCompatSubmit = () => {
+    compatForm.validateFields().then((values) => {
       createCompatMutation.mutate({
         lecturerAId: values.lecturerAId,
         lecturerBId: values.lecturerBId,
-        level: values.compatibilityType === 1 ? 'Preferred' : values.compatibilityType === 2 ? 'StrongIncompatible' : 'Normal',
+        level: values.compatibilityType,
       })
     })
   }
@@ -103,20 +207,52 @@ export const LecturersPage = () => {
     })
   }
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      importMutation.mutate(file)
+    }
+  }
+
   const lecturerColumns = [
-    { title: 'ID', dataIndex: 'id', width: 60 },
     { title: 'Họ tên', dataIndex: 'fullName' },
-    { title: 'Email', dataIndex: 'email' },
     { title: 'Mã GV', dataIndex: 'lecturerCode' },
+    { title: 'Khoa/Bộ môn', dataIndex: 'department' },
     {
-      title: 'Expertises',
-      dataIndex: 'expertises',
-      render: (expertises: string[]) => expertises?.join(', ') || '-',
+      title: 'Tải HD',
+      render: (_: unknown, record: Lecturer) => `${record.minTopics} - ${record.maxTopics}`,
     },
     {
       title: 'Trạng thái',
       dataIndex: 'isActive',
-      render: (a: boolean) => (a ? 'Hoạt động' : 'Tạm dừng'),
+      render: (a: boolean) => (
+        <Tag color={a ? 'green' : 'default'}>{a ? 'Hoạt động' : 'Tạm dừng'}</Tag>
+      ),
+    },
+    {
+      title: 'Thao tác',
+      key: 'actions',
+      render: (_: unknown, record: Lecturer) => (
+        <Space>
+          <Button icon={<EditOutlined />} onClick={() => openEdit(record)} size="small" />
+          <Button icon={<BuildOutlined />} title="Cấu hình tải" onClick={() => {
+            setSelectedLecturerId(record.id)
+            setLoadModalOpen(true)
+          }} size="small" />
+          <Button
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => {
+              modal.confirm({
+                title: 'Xác nhận xóa',
+                content: `Xóa giảng viên "${record.fullName}"?`,
+                onOk: () => deleteMutation.mutate(record.id),
+              })
+            }}
+            size="small"
+          />
+        </Space>
+      ),
     },
   ]
 
@@ -126,7 +262,7 @@ export const LecturersPage = () => {
     {
       title: 'Loại',
       dataIndex: 'compatibilityType',
-      render: (t: number) => COMPATIBILITY_TYPE_LABELS[t] ?? t,
+      render: (t: string) => COMPATIBILITY_TYPE_LABELS[t] ?? t,
     },
     { title: 'Lý do', dataIndex: 'reason' },
     {
@@ -150,7 +286,27 @@ export const LecturersPage = () => {
   ]
 
   return (
-    <PageWrapper title="Quản lý giảng viên">
+    <PageWrapper title="Quản lý giảng viên" extra={
+      <Space>
+        <input 
+          type="file" 
+          accept=".xlsx,.xls" 
+          style={{ display: 'none' }} 
+          ref={fileInputRef}
+          onChange={handleFileUpload} 
+        />
+        <Button 
+          icon={<UploadOutlined />} 
+          onClick={() => fileInputRef.current?.click()}
+          loading={importMutation.isPending}
+        >
+          Import Excel
+        </Button>
+        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+          Thêm GV
+        </Button>
+      </Space>
+    }>
       <Tabs
         items={[
           {
@@ -163,7 +319,7 @@ export const LecturersPage = () => {
                   dataSource={lecturers}
                   rowKey="id"
                   loading={isLoading}
-                  pagination={{ pageSize: 10 }}
+                  pagination={{ pageSize: 12 }}
                 />
               </>
             ),
@@ -178,7 +334,7 @@ export const LecturersPage = () => {
                     type="primary"
                     icon={<LinkOutlined />}
                     onClick={() => {
-                      form.resetFields()
+                      compatForm.resetFields()
                       setCompatModalOpen(true)
                     }}
                   >
@@ -197,58 +353,111 @@ export const LecturersPage = () => {
           },
         ]}
       />
+
+      <Modal
+        title={editingId ? 'Chỉnh sửa giảng viên' : 'Thêm giảng viên'}
+        open={modalOpen}
+        onCancel={() => setModalOpen(false)}
+        onOk={onSubmit}
+        confirmLoading={createMutation.isPending || updateMutation.isPending}
+        okText={editingId ? 'Cập nhật' : 'Thêm'}
+        width={600}
+      >
+        <Form form={form} layout="vertical">
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="fullName" label="Họ tên" rules={[{ required: true }]}>
+                <Input placeholder="Nguyễn Văn A" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="lecturerCode" label="Mã GV" rules={[{ required: true }]}>
+                <Input placeholder="GV001" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="email" label="Email" rules={[{ required: true, type: 'email' }]}>
+                <Input placeholder="abc@gmail.com" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="phoneNumber" label="Số điện thoại">
+                <Input placeholder="0987..." />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="department" label="Khoa/Bộ môn">
+                <Input placeholder="Kỹ thuật Phần mềm" />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item name="minTopics" label="SV tối thiểu">
+                <Input type="number" min={0} />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item name="maxTopics" label="SV tối đa">
+                <Input type="number" min={0} />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+      </Modal>
+
       <Modal
         title="Thêm tương thích giảng viên"
         open={compatModalOpen}
         onCancel={() => setCompatModalOpen(false)}
         onOk={onCompatSubmit}
+        confirmLoading={createCompatMutation.isPending}
         okText="Thêm"
       >
-        <Form form={form} layout="vertical">
+        <Form form={compatForm} layout="vertical">
           <Form.Item name="lecturerAId" label="Giảng viên A" rules={[{ required: true }]}>
             <Select
               placeholder="Chọn GV"
+              showSearch
+              filterOption={(input, option) => (option?.label ?? '').toString().toLowerCase().includes(input.toLowerCase())}
               options={lecturers.map((l: any) => ({ label: l.fullName, value: l.id }))}
             />
           </Form.Item>
           <Form.Item name="lecturerBId" label="Giảng viên B" rules={[{ required: true }]}>
             <Select
               placeholder="Chọn GV"
+              showSearch
+              filterOption={(input, option) => (option?.label ?? '').toString().toLowerCase().includes(input.toLowerCase())}
               options={lecturers.map((l: any) => ({ label: l.fullName, value: l.id }))}
             />
           </Form.Item>
-          <Form.Item name="compatibilityType" label="Loại" rules={[{ required: true }]}>
+          <Form.Item name="compatibilityType" label="Loại tương thích" rules={[{ required: true }]}>
             <Select
               options={[
-                { label: 'Trung lập', value: 0 },
-                { label: 'Whitelist', value: 1 },
-                { label: 'Blacklist', value: 2 },
+                { label: 'Trung lập', value: 'Normal' },
+                { label: 'Whitelist (Nên cùng hội đồng)', value: 'Preferred' },
+                { label: 'Blacklist (Tránh cùng hội đồng)', value: 'StrongIncompatible' },
               ]}
             />
           </Form.Item>
-          <Form.Item name="reason" label="Lý do">
-            <Input.TextArea rows={2} />
-          </Form.Item>
         </Form>
       </Modal>
+
       <Modal
         title="Cấu hình tải giảng viên"
         open={loadModalOpen}
         onCancel={() => setLoadModalOpen(false)}
         onOk={onLoadSubmit}
+        confirmLoading={updateLoadMutation.isPending}
         okText="Lưu"
       >
         <Form form={loadForm} layout="vertical">
-          <Form.Item name="semesterId" label="Học kỳ" rules={[{ required: true }]}>
+          <Form.Item name="maxLoad" label="Số nhóm tối đa" rules={[{ required: true }]}>
             <Select
-              placeholder="Chọn học kỳ"
-              options={semesters.map((s) => ({ label: s.name, value: s.id }))}
-            />
-          </Form.Item>
-          <Form.Item name="maxLoad" label="Tải tối đa" rules={[{ required: true }]}>
-            <Select
-              placeholder="Chọn tải"
-              options={[1, 2, 3, 4, 5].map((n) => ({ label: `${n} đề tài`, value: n }))}
+              placeholder="Chọn số lượng nhóm"
+              options={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => ({ label: `${n} đề tài (nhóm)`, value: n }))}
             />
           </Form.Item>
         </Form>

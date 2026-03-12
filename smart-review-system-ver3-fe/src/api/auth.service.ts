@@ -17,4 +17,9 @@ export const authService = {
     const response = await apiClient.get<ApiResponse<{ id: string; email: string; fullName: string; role: string }>>('/auth/me')
     return response.data
   },
+
+  changePassword: async (data: Record<string, string>) => {
+    const response = await apiClient.post<ApiResponse<null>>('/auth/change-password', data)
+    return response.data
+  },
 }

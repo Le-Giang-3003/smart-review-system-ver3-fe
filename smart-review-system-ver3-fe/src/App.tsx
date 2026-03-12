@@ -12,6 +12,8 @@ import { ReviewSlotsPage } from '@/pages/admin/ReviewSlotsPage'
 import { TopicsPage } from '@/pages/admin/TopicsPage'
 import { TagsPage } from '@/pages/admin/TagsPage'
 import { LecturersPage } from '@/pages/admin/LecturersPage'
+import { StudentsPage } from '@/pages/admin/StudentsPage'
+import { GroupsPage } from '@/pages/admin/GroupsPage'
 import { ReviewSessionsPage } from '@/pages/admin/ReviewSessionsPage'
 import { SchedulingPage } from '@/pages/admin/SchedulingPage'
 import { LecturerDashboard } from '@/pages/lecturer/LecturerDashboard'
@@ -38,6 +40,8 @@ const getAdminMenuItems = (navigate: (path: string) => void): MenuProps['items']
   { key: '/admin/topics', icon: null, label: 'Đề tài', onClick: () => navigate('/admin/topics') },
   { key: '/admin/tags', icon: null, label: 'Tags', onClick: () => navigate('/admin/tags') },
   { key: '/admin/lecturers', icon: null, label: 'Giảng viên', onClick: () => navigate('/admin/lecturers') },
+  { key: '/admin/students', icon: null, label: 'Sinh viên', onClick: () => navigate('/admin/students') },
+  { key: '/admin/groups', icon: null, label: 'Nhóm', onClick: () => navigate('/admin/groups') },
   { key: '/admin/review-sessions', icon: null, label: 'Phiên review', onClick: () => navigate('/admin/review-sessions') },
   { key: '/admin/scheduling', icon: null, label: 'Thuật toán lên lịch', onClick: () => navigate('/admin/scheduling') },
 ]
@@ -98,6 +102,8 @@ function App() {
               <Route path="topics" element={<TopicsPage />} />
               <Route path="tags" element={<TagsPage />} />
               <Route path="lecturers" element={<LecturersPage />} />
+              <Route path="students" element={<StudentsPage />} />
+              <Route path="groups" element={<GroupsPage />} />
               <Route path="review-sessions" element={<ReviewSessionsPage />} />
               <Route path="scheduling" element={<SchedulingPage />} />
             </Route>

@@ -151,14 +151,17 @@ export const reviewSessionService = {
 
 // Scheduling
 export const schedulingService = {
-  generate: (reviewPeriodId: number, forceRegenerate = false) =>
-    apiClient.post<ApiResponse<SchedulingResult>>('/Scheduling/generate', { reviewPeriodId, forceRegenerate }),
-  approve: (reviewPeriodId: number) =>
-    apiClient.post<ApiResponse<null>>(`/Scheduling/${reviewPeriodId}/approve`),
-  reject: (reviewPeriodId: number, reason: string) =>
-    apiClient.post<ApiResponse<null>>(`/Scheduling/${reviewPeriodId}/reject`, { reason }),
-  regenerateSlot: (reviewPeriodId: number, slotId: number, reason?: string) =>
-    apiClient.post<ApiResponse<SchedulingResult>>(`/Scheduling/slots/${slotId}/regenerate`, { reviewPeriodId, slotId, reason }),
-  regenerateGroup: (reviewPeriodId: number, groupId: number, reason?: string) =>
-    apiClient.post<ApiResponse<SchedulingResult>>(`/Scheduling/groups/${groupId}/regenerate`, { reviewPeriodId, groupId, reason }),
+  run: (reviewPeriodId: number) =>
+    apiClient.post<ApiResponse<SchedulingResult>>(`/Scheduling/run/${reviewPeriodId}`),
+  getResult: (reviewPeriodId: number) =>
+    apiClient.get<ApiResponse<SchedulingResult>>(`/Scheduling/result/${reviewPeriodId}`),
+  updateWeights: (data: { w1: number, w2: number, w3: number, w4: number, w5: number, w6: number }) =>
+    apiClient.put<ApiResponse<null>>('/Scheduling/weights', data),
+  manualOverride: (data: { reviewSlotId: number, removeLecturerId?: number, addLecturerId?: number, swapFromLecturerId?: number, swapToLecturerId?: number }) =>
+    apiClient.post<ApiResponse<null>>('/Scheduling/manual-override', data)
+}
+
+// Dashboard
+export const dashboardService = {
+  getAdminDashboard: () => apiClient.get<ApiResponse<any>>('/Dashboard/admin'),
 }

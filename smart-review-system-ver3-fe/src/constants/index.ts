@@ -36,8 +36,16 @@ export const TOPIC_LEVEL_LABELS: Record<number, string> = {
   2: 'Nâng cao',
 }
 
-export const COMPATIBILITY_TYPE_LABELS: Record<number, string> = {
-  0: 'Trung lập',
-  1: 'Whitelist',
-  2: 'Blacklist',
+export const COMPATIBILITY_TYPE_LABELS: Record<string, string> = {
+  Normal: 'Trung lập',
+  Preferred: 'Whitelist',
+  StrongIncompatible: 'Blacklist',
+}
+
+export const GROUP_STATUS_LABELS: Record<string, string> = {
+  Forming: 'Đang tập hợp',
+  Ready: 'Sẵn sàng',
+  Registered: 'Đã đăng ký',
+  InReview: 'Đang review',
+  Completed: 'Hoàn thành',
 }

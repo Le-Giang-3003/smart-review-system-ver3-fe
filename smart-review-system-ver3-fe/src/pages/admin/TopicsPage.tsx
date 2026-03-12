@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Table, Button, Space, Modal, Form, Input, Select, App } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, TagsOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { topicService } from '@/api/admin.service'
+import { topicService, lecturerService } from '@/api/admin.service'
 import { PageWrapper } from '@/components/common/PageWrapper'
 import type { Topic } from '@/types/entities'
 
@@ -20,7 +20,16 @@ export const TopicsPage = () => {
     queryKey: ['topics'],
     queryFn: async () => {
       const res = await topicService.getAll()
-      return res.data.data ?? []
+      const data = res.data?.data as any
+      return data?.items || data || [] // Support paginated or array
+    },
+  })
+
+  const { data: lecturers = [] } = useQuery({
+    queryKey: ['lecturers'],
+    queryFn: async () => {
+      const res = await lecturerService.getAll()
+      return res.data?.data?.items || res.data?.data || []
     },
   })
 
@@ -91,6 +100,7 @@ export const TopicsPage = () => {
     form.setFieldsValue({
       title: record.title,
       description: record.description,
+      supervisorId: record.supervisorId,
       keywords: record.keywords,
     })
     setEditingId(record.id)
@@ -110,12 +120,14 @@ export const TopicsPage = () => {
           id: editingId,
           title: values.title,
           description: values.description,
+          supervisorId: values.supervisorId,
         }
         updateMutation.mutate({ id: editingId, data: payload })
       } else {
         const payload = {
           title: values.title,
           description: values.description,
+          supervisorId: values.supervisorId,
           keywords: values.keywords ?? [],
         }
         createMutation.mutate(payload)
@@ -132,10 +144,14 @@ export const TopicsPage = () => {
   }
 
   const columns = [
-    { title: 'ID', dataIndex: 'id', width: 60 },
     { title: 'Tiêu đề', dataIndex: 'title' },
     { title: 'Nhóm', dataIndex: 'groupName', render: (n: string) => n || '-' },
     { title: 'GVHD', dataIndex: 'supervisorName', render: (n: string) => n || '-' },
+    {
+      title: 'Tags',
+      dataIndex: 'keywords',
+      render: (kws: string[]) => kws?.join(', ') || '-',
+    },
     {
       title: 'Thao tác',
       key: 'actions',
@@ -174,7 +190,7 @@ export const TopicsPage = () => {
         dataSource={topics}
         rowKey="id"
         loading={isLoading}
-        pagination={{ pageSize: 10 }}
+        pagination={{ pageSize: 12 }}
       />
       <Modal
         title={editingId ? 'Chỉnh sửa đề tài' : 'Thêm đề tài'}
@@ -189,6 +205,14 @@ export const TopicsPage = () => {
           </Form.Item>
           <Form.Item name="description" label="Mô tả">
             <Input.TextArea rows={3} />
+          </Form.Item>
+          <Form.Item name="supervisorId" label="Giảng viên HD" rules={[{ required: true }]}>
+             <Select
+              placeholder="Chọn GVHD"
+              showSearch
+              filterOption={(input, option) => (option?.label ?? '').toString().toLowerCase().includes(input.toLowerCase())}
+              options={lecturers.map((l: any) => ({ label: l.fullName, value: l.id }))}
+            />
           </Form.Item>
           {!editingId && (
           <Form.Item name="keywords" label="Từ khóa (Keywords)">
@@ -227,3 +251,4 @@ export const TopicsPage = () => {
     </PageWrapper>
   )
 }
+
