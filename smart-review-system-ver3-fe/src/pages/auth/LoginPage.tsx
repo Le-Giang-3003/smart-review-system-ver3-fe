@@ -37,7 +37,7 @@ export const LoginPage = () => {
     mutationFn: authService.login,
     onSuccess: (response) => {
       const loginData = response.data
-      if (response.isSuccess && loginData) {
+      if ((response.isSuccess || response.statusCode === 1000 || response.statusCode === 200) && loginData) {
         setAuth(loginData.accessToken, loginData.user)
         message.success('Đăng nhập thành công')
         const redirectPath = from || (loginData.user.role === 'Admin' ? ROUTES.ADMIN : loginData.user.role === 'Lecturer' ? ROUTES.LECTURER : ROUTES.STUDENT)
