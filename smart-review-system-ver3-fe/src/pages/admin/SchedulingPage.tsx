@@ -5,11 +5,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { schedulingService, reviewPeriodService } from '@/api/admin.service'
 import { formatDate, formatTime } from '@/utils/format'
 import { PageWrapper } from '@/components/common/PageWrapper'
-import type { ScheduleResult, ScheduledSession } from '@/types/entities'
+import type { SchedulingResult, CouncilDetail } from '@/types/entities'
 
 export const SchedulingPage = () => {
   const [selectedPeriodId, setSelectedPeriodId] = useState<number | undefined>()
-  const [scheduleResult, setScheduleResult] = useState<ScheduleResult | null>(null)
+  const [scheduleResult, setScheduleResult] = useState<SchedulingResult | null>(null)
   const queryClient = useQueryClient()
 
   const { data: periods = [] } = useQuery({
@@ -31,7 +31,7 @@ export const SchedulingPage = () => {
         message.error(res.data.message || 'Tạo lịch thất bại')
       }
     },
-    onError: (error: { response?: { data?: { message?: string; data?: ScheduleResult } } }) => {
+    onError: (error: { response?: { data?: { message?: string; data?: SchedulingResult } } }) => {
       if (error.response?.data?.data) {
         setScheduleResult(error.response.data.data)
       }
@@ -77,21 +77,24 @@ export const SchedulingPage = () => {
   const sessionColumns = [
     {
       title: 'Ngày',
-      dataIndex: 'slotDate',
+      dataIndex: 'date',
       render: (d: string) => formatDate(d),
     },
     {
       title: 'Thời gian',
-      render: (_: unknown, r: ScheduledSession) => `${formatTime(r.startTime)} - ${formatTime(r.endTime)}`,
+      render: (_: unknown, r: CouncilDetail) => `${formatTime(r.startTime)} - ${formatTime(r.endTime)}`,
     },
-    { title: 'Nhóm', dataIndex: 'groupName' },
+    {
+      title: 'Nhóm',
+      dataIndex: 'groups',
+      render: (groups: { groupName: string }[]) => groups?.map((g) => g.groupName).join(', ') || '-',
+    },
     {
       title: 'Hội đồng',
-      dataIndex: 'councilMembers',
-      render: (members: { lecturerName: string }[]) =>
-        members?.map((m) => m.lecturerName).join(', ') || '-',
+      dataIndex: 'lecturers',
+      render: (lecturers: { lecturerName: string }[]) =>
+        lecturers?.map((m) => m.lecturerName).join(', ') || '-',
     },
-    { title: 'Điểm thuật toán', dataIndex: 'algorithmScore', width: 120 },
   ]
 
   return (
@@ -119,30 +122,27 @@ export const SchedulingPage = () => {
           <>
             <Alert
               message={
-                scheduleResult.isSuccess
-                  ? `Thành công: ${scheduleResult.scheduledGroups} nhóm đã lên lịch, ${scheduleResult.unscheduledGroups} nhóm chưa lên lịch`
-                  : `Có lỗi: ${scheduleResult.errors?.join(', ')}`
+                scheduleResult.unschedulableSlots === 0
+                  ? `Thành công: ${scheduleResult.scheduledSlots} nhóm đã lên lịch.`
+                  : `Lên lịch một phần: ${scheduleResult.scheduledSlots} nhóm đã lên lịch, ${scheduleResult.unschedulableSlots} nhóm chưa xếp được.`
               }
-              type={scheduleResult.isSuccess ? 'success' : 'warning'}
+              description={
+                scheduleResult.unschedulableSlots > 0 && scheduleResult.unschedulableReasons?.length > 0
+                  ? `Lý do: ${scheduleResult.unschedulableReasons.join('; ')}`
+                  : undefined
+              }
+              type={scheduleResult.unschedulableSlots === 0 ? 'success' : 'warning'}
               showIcon
               style={{ marginBottom: 16 }}
             />
-            {scheduleResult.warnings && scheduleResult.warnings.length > 0 && (
-              <Alert
-                message="Cảnh báo"
-                description={scheduleResult.warnings.map((w) => w.message).join('; ')}
-                type="warning"
-                style={{ marginBottom: 16 }}
-              />
-            )}
             <Table
               columns={sessionColumns}
-              dataSource={scheduleResult.scheduledSessions}
-              rowKey="sessionId"
+              dataSource={scheduleResult.assignments}
+              rowKey="id"
               pagination={{ pageSize: 10 }}
               style={{ marginBottom: 16 }}
             />
-            {scheduleResult.isSuccess && selectedPeriodId && (
+            {selectedPeriodId && (
               <Space>
                 <Button
                   type="primary"

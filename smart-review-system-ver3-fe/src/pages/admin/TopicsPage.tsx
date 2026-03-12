@@ -1,9 +1,8 @@
 import { useState } from 'react'
-import { Table, Button, Space, Modal, Form, Input, InputNumber, Select, App } from 'antd'
+import { Table, Button, Space, Modal, Form, Input, Select, App } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, TagsOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { topicService, tagService } from '@/api/admin.service'
-import { TOPIC_LEVEL_LABELS } from '@/constants'
+import { topicService } from '@/api/admin.service'
 import { PageWrapper } from '@/components/common/PageWrapper'
 import type { Topic } from '@/types/entities'
 
@@ -21,14 +20,6 @@ export const TopicsPage = () => {
     queryKey: ['topics'],
     queryFn: async () => {
       const res = await topicService.getAll()
-      return res.data.data ?? []
-    },
-  })
-
-  const { data: tags = [] } = useQuery({
-    queryKey: ['tags'],
-    queryFn: async () => {
-      const res = await tagService.getAll()
       return res.data.data ?? []
     },
   })
@@ -76,8 +67,8 @@ export const TopicsPage = () => {
   })
 
   const assignTagsMutation = useMutation({
-    mutationFn: ({ id, tagIds }: { id: number; tagIds: number[] }) =>
-      topicService.assignTags(id, tagIds),
+    mutationFn: ({ id, keywords }: { id: number; keywords: string[] }) =>
+      topicService.assignTags(id, keywords),
     onSuccess: (res) => {
       if (res.data.isSuccess) {
         message.success('Gán tags thành công')
@@ -100,12 +91,7 @@ export const TopicsPage = () => {
     form.setFieldsValue({
       title: record.title,
       description: record.description,
-      level: record.level,
-      isActive: record.isActive,
-      maxGroups: record.maxGroups,
-      requiredSkills: record.requiredSkills,
-      expectedOutcomes: record.expectedOutcomes,
-      tagIds: record.tags.map((t) => t.id),
+      keywords: record.keywords,
     })
     setEditingId(record.id)
     setModalOpen(true)
@@ -113,7 +99,7 @@ export const TopicsPage = () => {
 
   const openTagModal = (record: Topic) => {
     setSelectedTopicId(record.id)
-    tagForm.setFieldsValue({ tagIds: record.tags.map((t) => t.id) })
+    tagForm.setFieldsValue({ keywords: record.keywords || [] })
     setTagModalOpen(true)
   }
 
@@ -124,22 +110,13 @@ export const TopicsPage = () => {
           id: editingId,
           title: values.title,
           description: values.description,
-          level: values.level,
-          isActive: values.isActive ?? true,
-          maxGroups: values.maxGroups,
-          requiredSkills: values.requiredSkills,
-          expectedOutcomes: values.expectedOutcomes,
         }
         updateMutation.mutate({ id: editingId, data: payload })
       } else {
         const payload = {
           title: values.title,
           description: values.description,
-          level: values.level,
-          maxGroups: values.maxGroups,
-          requiredSkills: values.requiredSkills,
-          expectedOutcomes: values.expectedOutcomes,
-          tagIds: values.tagIds ?? [],
+          keywords: values.keywords ?? [],
         }
         createMutation.mutate(payload)
       }
@@ -149,7 +126,7 @@ export const TopicsPage = () => {
   const onAssignTags = () => {
     tagForm.validateFields().then((values) => {
       if (selectedTopicId) {
-        assignTagsMutation.mutate({ id: selectedTopicId, tagIds: values.tagIds ?? [] })
+        assignTagsMutation.mutate({ id: selectedTopicId, keywords: values.keywords ?? [] })
       }
     })
   }
@@ -157,17 +134,8 @@ export const TopicsPage = () => {
   const columns = [
     { title: 'ID', dataIndex: 'id', width: 60 },
     { title: 'Tiêu đề', dataIndex: 'title' },
-    {
-      title: 'Cấp độ',
-      dataIndex: 'level',
-      render: (l: number) => TOPIC_LEVEL_LABELS[l] ?? l,
-    },
-    { title: 'Số nhóm ĐK', dataIndex: 'registeredGroupsCount', width: 100 },
-    {
-      title: 'Trạng thái',
-      dataIndex: 'isActive',
-      render: (a: boolean) => (a ? 'Hoạt động' : 'Tạm dừng'),
-    },
+    { title: 'Nhóm', dataIndex: 'groupName', render: (n: string) => n || '-' },
+    { title: 'GVHD', dataIndex: 'supervisorName', render: (n: string) => n || '-' },
     {
       title: 'Thao tác',
       key: 'actions',
@@ -222,40 +190,11 @@ export const TopicsPage = () => {
           <Form.Item name="description" label="Mô tả">
             <Input.TextArea rows={3} />
           </Form.Item>
-          <Form.Item name="level" label="Cấp độ" rules={[{ required: true }]}>
-            <Select
-              options={[
-                { label: 'Cơ bản', value: 0 },
-                { label: 'Trung cấp', value: 1 },
-                { label: 'Nâng cao', value: 2 },
-              ]}
-            />
-          </Form.Item>
-          <Form.Item name="maxGroups" label="Số nhóm tối đa">
-            <InputNumber min={1} style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item name="requiredSkills" label="Kỹ năng yêu cầu">
-            <Input placeholder="VD: Python, Machine Learning" />
-          </Form.Item>
-          <Form.Item name="expectedOutcomes" label="Kết quả mong đợi">
-            <Input.TextArea rows={2} />
-          </Form.Item>
-          {editingId && (
-            <Form.Item name="isActive" label="Trạng thái">
-              <Select
-                options={[
-                  { label: 'Hoạt động', value: true },
-                  { label: 'Tạm dừng', value: false },
-                ]}
-              />
-            </Form.Item>
-          )}
           {!editingId && (
-          <Form.Item name="tagIds" label="Tags">
+          <Form.Item name="keywords" label="Từ khóa (Keywords)">
             <Select
-              mode="multiple"
-              placeholder="Chọn tags"
-              options={tags.map((t) => ({ label: t.name, value: t.id }))}
+              mode="tags"
+              placeholder="Nhập keywords (nhấn Enter sau mỗi từ)"
             />
           </Form.Item>
           )}
@@ -277,11 +216,10 @@ export const TopicsPage = () => {
         okText="Lưu"
       >
         <Form form={tagForm} layout="vertical">
-          <Form.Item name="tagIds" label="Tags">
+          <Form.Item name="keywords" label="Từ khóa (Keywords)">
             <Select
-              mode="multiple"
-              placeholder="Chọn tags"
-              options={tags.map((t) => ({ label: t.name, value: t.id }))}
+              mode="tags"
+              placeholder="Nhập keywords (nhấn Enter sau mỗi từ)"
             />
           </Form.Item>
         </Form>

@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { Table, Button, Space, Modal, Form, Input, InputNumber, DatePicker, Select, App } from 'antd'
+import { Table, Button, Space, Modal, Form, Input, DatePicker, Select, App } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, PlayCircleOutlined, StopOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { reviewPeriodService, semesterService } from '@/api/admin.service'
 import { formatDate } from '@/utils/format'
-import { PERIOD_STATUS_LABELS, REVIEW_ROUND_LABELS } from '@/constants'
+// Constants handled dynamically
 import { PageWrapper } from '@/components/common/PageWrapper'
 import type { ReviewPeriod } from '@/types/entities'
 
@@ -100,20 +100,6 @@ export const ReviewPeriodsPage = () => {
 
   const openCreate = () => {
     form.resetFields()
-    form.setFieldsValue({
-      maxSlotsPerDay: 5,
-      maxGroupsPerSlot: 3,
-      reviewDurationMinutes: 45,
-      minLecturersPerSlot: 4,
-      maxLecturersPerSlot: 5,
-      councilSize: 2,
-      weightJaccard: 0.35,
-      weightPreference: 0.1,
-      weightInstructorPresence: 0.15,
-      weightReviewInheritance: 0.15,
-      weightHistoryDiff: 0.15,
-      weightLoadImbalance: 0.1,
-    })
     setEditingId(null)
     setModalOpen(true)
   }
@@ -122,24 +108,9 @@ export const ReviewPeriodsPage = () => {
     form.setFieldsValue({
       semesterId: record.semesterId,
       name: record.name,
-      reviewRound: record.reviewRound,
+      round: record.round,
       startDate: dayjs(record.startDate),
       endDate: dayjs(record.endDate),
-      description: record.description,
-      maxSlotsPerDay: record.maxSlotsPerDay,
-      maxGroupsPerSlot: record.maxGroupsPerSlot,
-      reviewDurationMinutes: record.reviewDurationMinutes,
-      minLecturersPerSlot: record.minLecturersPerSlot,
-      maxLecturersPerSlot: record.maxLecturersPerSlot,
-      councilSize: record.councilSize,
-      lecturerRegistrationDeadline: record.lecturerRegistrationDeadline ? dayjs(record.lecturerRegistrationDeadline) : null,
-      studentRegistrationDeadline: record.studentRegistrationDeadline ? dayjs(record.studentRegistrationDeadline) : null,
-      weightJaccard: record.weightJaccard,
-      weightPreference: record.weightPreference,
-      weightInstructorPresence: record.weightInstructorPresence,
-      weightReviewInheritance: record.weightReviewInheritance,
-      weightHistoryDiff: record.weightHistoryDiff,
-      weightLoadImbalance: record.weightLoadImbalance,
     })
     setEditingId(record.id)
     setModalOpen(true)
@@ -150,24 +121,9 @@ export const ReviewPeriodsPage = () => {
       const payload = {
         semesterId: values.semesterId,
         name: values.name,
-        reviewRound: values.reviewRound,
+        round: values.round,
         startDate: values.startDate.format('YYYY-MM-DD'),
         endDate: values.endDate.format('YYYY-MM-DD'),
-        description: values.description,
-        maxSlotsPerDay: values.maxSlotsPerDay,
-        maxGroupsPerSlot: values.maxGroupsPerSlot,
-        reviewDurationMinutes: values.reviewDurationMinutes,
-        minLecturersPerSlot: values.minLecturersPerSlot,
-        maxLecturersPerSlot: values.maxLecturersPerSlot,
-        councilSize: values.councilSize,
-        lecturerRegistrationDeadline: values.lecturerRegistrationDeadline?.toISOString(),
-        studentRegistrationDeadline: values.studentRegistrationDeadline?.toISOString(),
-        weightJaccard: values.weightJaccard,
-        weightPreference: values.weightPreference,
-        weightInstructorPresence: values.weightInstructorPresence,
-        weightReviewInheritance: values.weightReviewInheritance,
-        weightHistoryDiff: values.weightHistoryDiff,
-        weightLoadImbalance: values.weightLoadImbalance,
       }
       if (editingId) {
         updateMutation.mutate({ id: editingId, data: { ...payload, id: editingId } })
@@ -183,8 +139,8 @@ export const ReviewPeriodsPage = () => {
     { title: 'Học kỳ', dataIndex: 'semesterName' },
     {
       title: 'Vòng',
-      dataIndex: 'reviewRound',
-      render: (r: number) => REVIEW_ROUND_LABELS[r] ?? r,
+      dataIndex: 'round',
+      render: (r: string) => r,
     },
     {
       title: 'Bắt đầu',
@@ -199,7 +155,7 @@ export const ReviewPeriodsPage = () => {
     {
       title: 'Trạng thái',
       dataIndex: 'status',
-      render: (s: number) => PERIOD_STATUS_LABELS[s] ?? s,
+      render: (s: string) => s,
     },
     {
       title: 'Thao tác',
@@ -208,7 +164,7 @@ export const ReviewPeriodsPage = () => {
       render: (_: unknown, record: ReviewPeriod) => (
         <Space>
           <Button icon={<EditOutlined />} onClick={() => openEdit(record)} size="small" />
-          {record.status === 0 && (
+          {record.status === 'Draft' && (
             <Button
               type="link"
               icon={<PlayCircleOutlined />}
@@ -218,7 +174,7 @@ export const ReviewPeriodsPage = () => {
               Mở
             </Button>
           )}
-          {record.status === 1 && (
+          {record.status === 'Open' && (
             <Button
               type="link"
               icon={<StopOutlined />}
@@ -278,7 +234,7 @@ export const ReviewPeriodsPage = () => {
           <Form.Item name="name" label="Tên" rules={[{ required: true }]}>
             <Input placeholder="VD: Đợt review vòng 1" />
           </Form.Item>
-          <Form.Item name="reviewRound" label="Vòng review" rules={[{ required: true }]}>
+          <Form.Item name="round" label="Vòng review" rules={[{ required: true }]}>
             <Select
               options={[
                 { label: 'Vòng 1', value: 1 },
@@ -295,22 +251,6 @@ export const ReviewPeriodsPage = () => {
               <DatePicker />
             </Form.Item>
           </Space>
-          <Form.Item name="description" label="Mô tả">
-            <Input.TextArea rows={2} />
-          </Form.Item>
-          <Form.Item label="Cấu hình">
-            <Space wrap>
-              <Form.Item name="maxSlotsPerDay" noStyle>
-                <InputNumber min={1} max={10} addonBefore="Slots/ngày" style={{ width: 120 }} />
-              </Form.Item>
-              <Form.Item name="maxGroupsPerSlot" noStyle>
-                <InputNumber min={1} max={5} addonBefore="Nhóm/slot" style={{ width: 120 }} />
-              </Form.Item>
-              <Form.Item name="councilSize" noStyle>
-                <InputNumber min={1} max={5} addonBefore="HĐ" style={{ width: 100 }} />
-              </Form.Item>
-            </Space>
-          </Form.Item>
           <Form.Item>
             <Space>
               <Button type="primary" htmlType="submit" loading={createMutation.isPending || updateMutation.isPending}>

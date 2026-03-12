@@ -67,8 +67,8 @@ export const LecturersPage = () => {
   })
 
   const updateLoadMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: { lecturerId: number; semesterId: number; maxLoad: number } }) =>
-      lecturerService.updateLoad(id, data),
+    mutationFn: (data: { lecturerIds: number[]; minTopics: number; maxTopics: number }) =>
+      lecturerService.batchUpdateWorkload(data.lecturerIds, data.minTopics, data.maxTopics),
     onSuccess: (res) => {
       if (res.data.isSuccess) {
         message.success('Cập nhật tải thành công')
@@ -86,8 +86,7 @@ export const LecturersPage = () => {
       createCompatMutation.mutate({
         lecturerAId: values.lecturerAId,
         lecturerBId: values.lecturerBId,
-        compatibilityType: values.compatibilityType,
-        reason: values.reason,
+        level: values.compatibilityType === 1 ? 'Preferred' : values.compatibilityType === 2 ? 'StrongIncompatible' : 'Normal',
       })
     })
   }
@@ -96,12 +95,9 @@ export const LecturersPage = () => {
     loadForm.validateFields().then((values) => {
       if (selectedLecturerId) {
         updateLoadMutation.mutate({
-          id: selectedLecturerId,
-          data: {
-            lecturerId: selectedLecturerId,
-            semesterId: values.semesterId,
-            maxLoad: values.maxLoad,
-          },
+          lecturerIds: [selectedLecturerId],
+          minTopics: 0,
+          maxTopics: values.maxLoad,
         })
       }
     })
@@ -113,9 +109,9 @@ export const LecturersPage = () => {
     { title: 'Email', dataIndex: 'email' },
     { title: 'Mã GV', dataIndex: 'lecturerCode' },
     {
-      title: 'Tags',
-      dataIndex: 'tags',
-      render: (tags: { tagName: string }[]) => tags?.map((t) => t.tagName).join(', ') || '-',
+      title: 'Expertises',
+      dataIndex: 'expertises',
+      render: (expertises: string[]) => expertises?.join(', ') || '-',
     },
     {
       title: 'Trạng thái',
@@ -212,13 +208,13 @@ export const LecturersPage = () => {
           <Form.Item name="lecturerAId" label="Giảng viên A" rules={[{ required: true }]}>
             <Select
               placeholder="Chọn GV"
-              options={lecturers.map((l) => ({ label: l.fullName, value: l.id }))}
+              options={lecturers.map((l: any) => ({ label: l.fullName, value: l.id }))}
             />
           </Form.Item>
           <Form.Item name="lecturerBId" label="Giảng viên B" rules={[{ required: true }]}>
             <Select
               placeholder="Chọn GV"
-              options={lecturers.map((l) => ({ label: l.fullName, value: l.id }))}
+              options={lecturers.map((l: any) => ({ label: l.fullName, value: l.id }))}
             />
           </Form.Item>
           <Form.Item name="compatibilityType" label="Loại" rules={[{ required: true }]}>

@@ -1,0 +1,51 @@
+﻿src/pages/admin/LecturersPage.tsx(71,23): error TS2339: Property 'updateLoad' does not exist on type '{ getAll: (search?: string | undefined, department?: string | undefined, page?: number, pageSize?: number) => Promise<AxiosResponse<ApiResponse<any>, any, {}>>; ... 10 more ...; import: (file: File) => Promise<...>; }'.
+src/pages/admin/LecturersPage.tsx(73,11): error TS18046: 'res' is of type 'unknown'.
+src/pages/admin/LecturersPage.tsx(79,23): error TS18046: 'res' is of type 'unknown'.
+src/pages/admin/LecturersPage.tsx(89,9): error TS2353: Object literal may only specify known properties, and 'compatibilityType' does not exist in type '{ lecturerAId: number; lecturerBId: number; level: string; }'.
+src/pages/admin/LecturersPage.tsx(215,39): error TS7006: Parameter 'l' implicitly has an 'any' type.
+src/pages/admin/LecturersPage.tsx(221,39): error TS7006: Parameter 'l' implicitly has an 'any' type.
+src/pages/admin/ReviewPeriodsPage.tsx(125,27): error TS2339: Property 'reviewRound' does not exist on type 'ReviewPeriod'.
+src/pages/admin/ReviewPeriodsPage.tsx(128,27): error TS2339: Property 'description' does not exist on type 'ReviewPeriod'.
+src/pages/admin/ReviewPeriodsPage.tsx(129,30): error TS2339: Property 'maxSlotsPerDay' does not exist on type 'ReviewPeriod'.
+src/pages/admin/ReviewPeriodsPage.tsx(130,32): error TS2339: Property 'maxGroupsPerSlot' does not exist on type 'ReviewPeriod'.
+src/pages/admin/ReviewPeriodsPage.tsx(131,37): error TS2339: Property 'reviewDurationMinutes' does not exist on type 'ReviewPeriod'.
+src/pages/admin/ReviewPeriodsPage.tsx(132,35): error TS2339: Property 'minLecturersPerSlot' does not exist on type 'ReviewPeriod'.
+src/pages/admin/ReviewPeriodsPage.tsx(133,35): error TS2339: Property 'maxLecturersPerSlot' does not exist on type 'ReviewPeriod'.
+src/pages/admin/ReviewPeriodsPage.tsx(134,27): error TS2339: Property 'councilSize' does not exist on type 'ReviewPeriod'.
+src/pages/admin/ReviewPeriodsPage.tsx(135,44): error TS2339: Property 'lecturerRegistrationDeadline' does not exist on type 'ReviewPeriod'.
+src/pages/admin/ReviewPeriodsPage.tsx(135,88): error TS2339: Property 'lecturerRegistrationDeadline' does not exist on type 'ReviewPeriod'.
+src/pages/admin/ReviewPeriodsPage.tsx(136,43): error TS2339: Property 'studentRegistrationDeadline' does not exist on type 'ReviewPeriod'.
+src/pages/admin/ReviewPeriodsPage.tsx(136,86): error TS2339: Property 'studentRegistrationDeadline' does not exist on type 'ReviewPeriod'.
+src/pages/admin/ReviewPeriodsPage.tsx(137,29): error TS2339: Property 'weightJaccard' does not exist on type 'ReviewPeriod'.
+src/pages/admin/ReviewPeriodsPage.tsx(138,32): error TS2339: Property 'weightPreference' does not exist on type 'ReviewPeriod'.
+src/pages/admin/ReviewPeriodsPage.tsx(139,40): error TS2339: Property 'weightInstructorPresence' does not exist on type 'ReviewPeriod'.
+src/pages/admin/ReviewPeriodsPage.tsx(140,39): error TS2339: Property 'weightReviewInheritance' does not exist on type 'ReviewPeriod'.
+src/pages/admin/ReviewPeriodsPage.tsx(141,33): error TS2339: Property 'weightHistoryDiff' does not exist on type 'ReviewPeriod'.
+src/pages/admin/ReviewPeriodsPage.tsx(142,35): error TS2339: Property 'weightLoadImbalance' does not exist on type 'ReviewPeriod'.
+src/pages/admin/ReviewPeriodsPage.tsx(211,12): error TS2367: This comparison appears to be unintentional because the types 'string' and 'number' have no overlap.
+src/pages/admin/ReviewPeriodsPage.tsx(221,12): error TS2367: This comparison appears to be unintentional because the types 'string' and 'number' have no overlap.
+src/pages/admin/ReviewSlotsPage.tsx(86,30): error TS2339: Property 'slotDate' does not exist on type 'ReviewSlot'.
+src/pages/admin/ReviewSlotsPage.tsx(87,26): error TS2339: Property 'slotNumber' does not exist on type 'ReviewSlot'.
+src/pages/admin/ReviewSlotsPage.tsx(90,24): error TS2339: Property 'location' does not exist on type 'ReviewSlot'.
+src/pages/admin/ReviewSlotsPage.tsx(91,21): error TS2339: Property 'notes' does not exist on type 'ReviewSlot'.
+src/pages/admin/SchedulingPage.tsx(8,15): error TS2724: '"@/types/entities"' has no exported member named 'ScheduleResult'. Did you mean 'SchedulingResult'?
+src/pages/admin/SchedulingPage.tsx(8,31): error TS2305: Module '"@/types/entities"' has no exported member 'ScheduledSession'.
+src/pages/admin/SchedulingPage.tsx(133,59): error TS7006: Parameter 'w' implicitly has an 'any' type.
+src/pages/admin/SemestersPage.tsx(43,34): error TS2345: Argument of type '{ id: number; name: string; academicYear: string; semesterNumber: number; startDate: string; endDate: string; description?: string | undefined; }' is not assignable to parameter of type '{ code: string; name: string; startDate: string; endDate: string; }'.
+  Property 'code' is missing in type '{ id: number; name: string; academicYear: string; semesterNumber: number; startDate: string; endDate: string; description?: string | undefined; }' but required in type '{ code: string; name: string; startDate: string; endDate: string; }'.
+src/pages/admin/SemestersPage.tsx(78,28): error TS2339: Property 'academicYear' does not exist on type 'Semester'.
+src/pages/admin/SemestersPage.tsx(79,30): error TS2339: Property 'semesterNumber' does not exist on type 'Semester'.
+src/pages/admin/SemestersPage.tsx(82,27): error TS2339: Property 'description' does not exist on type 'Semester'.
+src/pages/admin/SemestersPage.tsx(101,31): error TS2345: Argument of type '{ name: any; academicYear: any; semesterNumber: any; startDate: any; endDate: any; description: any; }' is not assignable to parameter of type '{ code: string; name: string; startDate: string; endDate: string; }'.
+  Property 'code' is missing in type '{ name: any; academicYear: any; semesterNumber: any; startDate: any; endDate: any; description: any; }' but required in type '{ code: string; name: string; startDate: string; endDate: string; }'.
+src/pages/admin/TopicsPage.tsx(80,35): error TS2345: Argument of type 'number[]' is not assignable to parameter of type 'string[]'.
+  Type 'number' is not assignable to type 'string'.
+src/pages/admin/TopicsPage.tsx(103,21): error TS2339: Property 'level' does not exist on type 'Topic'.
+src/pages/admin/TopicsPage.tsx(104,24): error TS2339: Property 'isActive' does not exist on type 'Topic'.
+src/pages/admin/TopicsPage.tsx(105,25): error TS2339: Property 'maxGroups' does not exist on type 'Topic'.
+src/pages/admin/TopicsPage.tsx(106,30): error TS2339: Property 'requiredSkills' does not exist on type 'Topic'.
+src/pages/admin/TopicsPage.tsx(107,32): error TS2339: Property 'expectedOutcomes' does not exist on type 'Topic'.
+src/pages/admin/TopicsPage.tsx(108,22): error TS2339: Property 'tags' does not exist on type 'Topic'.
+src/pages/admin/TopicsPage.tsx(108,32): error TS7006: Parameter 't' implicitly has an 'any' type.
+src/pages/admin/TopicsPage.tsx(116,45): error TS2339: Property 'tags' does not exist on type 'Topic'.
+src/pages/admin/TopicsPage.tsx(116,55): error TS7006: Parameter 't' implicitly has an 'any' type.

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Table, Button, Space, Modal, Form, Input, InputNumber, DatePicker, Select, App } from 'antd'
+import { Table, Button, Space, Modal, Form, Input, DatePicker, Select, App } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
@@ -83,12 +83,10 @@ export const ReviewSlotsPage = () => {
   const openEdit = (record: ReviewSlot) => {
     form.setFieldsValue({
       reviewPeriodId: record.reviewPeriodId,
-      slotDate: dayjs(record.slotDate),
-      slotNumber: record.slotNumber,
+      date: dayjs(record.date),
       startTime: dayjs(record.startTime, 'HH:mm'),
       endTime: dayjs(record.endTime, 'HH:mm'),
-      location: record.location,
-      notes: record.notes,
+      room: record.room,
     })
     setEditingId(record.id)
     setModalOpen(true)
@@ -98,12 +96,10 @@ export const ReviewSlotsPage = () => {
     form.validateFields().then((values) => {
       const payload = {
         reviewPeriodId: values.reviewPeriodId,
-        slotDate: values.slotDate.format('YYYY-MM-DD'),
-        slotNumber: values.slotNumber,
+        date: values.date.format('YYYY-MM-DD'),
         startTime: values.startTime.format('HH:mm'),
         endTime: values.endTime.format('HH:mm'),
-        location: values.location,
-        notes: values.notes,
+        room: values.room,
       }
       if (editingId) {
         updateMutation.mutate({ id: editingId, data: { ...payload, id: editingId } })
@@ -118,19 +114,18 @@ export const ReviewSlotsPage = () => {
     { title: 'Đợt review', dataIndex: 'reviewPeriodName' },
     {
       title: 'Ngày',
-      dataIndex: 'slotDate',
+      dataIndex: 'date',
       render: (d: string) => formatDate(d),
     },
-    { title: 'Slot #', dataIndex: 'slotNumber', width: 80 },
     {
       title: 'Thời gian',
       render: (_: unknown, r: ReviewSlot) => `${formatTime(r.startTime)} - ${formatTime(r.endTime)}`,
     },
-    { title: 'Địa điểm', dataIndex: 'location' },
+    { title: 'Phòng', dataIndex: 'room' },
     {
       title: 'Trạng thái',
-      dataIndex: 'isCancelled',
-      render: (c: boolean) => (c ? 'Đã hủy' : 'Hoạt động'),
+      dataIndex: 'createdAt',
+      render: (d: string) => formatDate(d),
     },
     {
       title: 'Thao tác',
@@ -193,11 +188,8 @@ export const ReviewSlotsPage = () => {
               options={periods.map((p) => ({ label: p.name, value: p.id }))}
             />
           </Form.Item>
-          <Form.Item name="slotDate" label="Ngày" rules={[{ required: true }]}>
+          <Form.Item name="date" label="Ngày" rules={[{ required: true }]}>
             <DatePicker style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item name="slotNumber" label="Số slot" rules={[{ required: true }]}>
-            <InputNumber min={1} style={{ width: '100%' }} />
           </Form.Item>
           <Space style={{ width: '100%' }}>
             <Form.Item name="startTime" label="Bắt đầu" rules={[{ required: true }]}>
@@ -207,11 +199,8 @@ export const ReviewSlotsPage = () => {
               <DatePicker.TimePicker style={{ width: '100%' }} format="HH:mm" />
             </Form.Item>
           </Space>
-          <Form.Item name="location" label="Địa điểm">
+          <Form.Item name="room" label="Phòng">
             <Input placeholder="VD: Phòng A101" />
-          </Form.Item>
-          <Form.Item name="notes" label="Ghi chú">
-            <Input.TextArea rows={2} />
           </Form.Item>
           <Form.Item>
             <Space>

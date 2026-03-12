@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Table, Button, Space, Modal, Form, Input, InputNumber, DatePicker, App } from 'antd'
+import { Table, Button, Space, Modal, Form, Input, DatePicker, App } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
@@ -39,7 +39,7 @@ export const SemestersPage = () => {
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: { id: number; name: string; academicYear: string; semesterNumber: number; startDate: string; endDate: string; description?: string } }) =>
+    mutationFn: ({ id, data }: { id: number; data: { code: string; name: string; startDate: string; endDate: string; } }) =>
       semesterService.update(id, data),
     onSuccess: (res) => {
       if (res.data.isSuccess) {
@@ -75,11 +75,9 @@ export const SemestersPage = () => {
   const openEdit = (record: Semester) => {
     form.setFieldsValue({
       name: record.name,
-      academicYear: record.academicYear,
-      semesterNumber: record.semesterNumber,
+      code: record.code,
       startDate: dayjs(record.startDate),
       endDate: dayjs(record.endDate),
-      description: record.description,
     })
     setEditingId(record.id)
     setModalOpen(true)
@@ -89,14 +87,12 @@ export const SemestersPage = () => {
     form.validateFields().then((values) => {
       const payload = {
         name: values.name,
-        academicYear: values.academicYear,
-        semesterNumber: values.semesterNumber,
+        code: values.code,
         startDate: values.startDate.format('YYYY-MM-DD'),
         endDate: values.endDate.format('YYYY-MM-DD'),
-        description: values.description,
       }
       if (editingId) {
-        updateMutation.mutate({ id: editingId, data: { ...payload, id: editingId } })
+        updateMutation.mutate({ id: editingId, data: payload })
       } else {
         createMutation.mutate(payload)
       }
@@ -106,8 +102,7 @@ export const SemestersPage = () => {
   const columns = [
     { title: 'ID', dataIndex: 'id', width: 60 },
     { title: 'Tên', dataIndex: 'name' },
-    { title: 'Năm học', dataIndex: 'academicYear' },
-    { title: 'Học kỳ', dataIndex: 'semesterNumber', width: 80 },
+    { title: 'Mã học kỳ', dataIndex: 'code' },
     {
       title: 'Bắt đầu',
       dataIndex: 'startDate',
@@ -172,20 +167,14 @@ export const SemestersPage = () => {
           <Form.Item name="name" label="Tên" rules={[{ required: true }]}>
             <Input placeholder="VD: Học kỳ 1" />
           </Form.Item>
-          <Form.Item name="academicYear" label="Năm học" rules={[{ required: true }]}>
-            <Input placeholder="VD: 2024-2025" />
-          </Form.Item>
-          <Form.Item name="semesterNumber" label="Số học kỳ" rules={[{ required: true }]}>
-            <InputNumber min={1} max={3} style={{ width: '100%' }} />
+          <Form.Item name="code" label="Mã học kỳ" rules={[{ required: true }]}>
+            <Input placeholder="VD: SP24" />
           </Form.Item>
           <Form.Item name="startDate" label="Ngày bắt đầu" rules={[{ required: true }]}>
             <DatePicker style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item name="endDate" label="Ngày kết thúc" rules={[{ required: true }]}>
             <DatePicker style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item name="description" label="Mô tả">
-            <Input.TextArea rows={3} />
           </Form.Item>
           <Form.Item>
             <Space>
