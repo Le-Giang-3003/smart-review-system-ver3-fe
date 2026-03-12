@@ -38,7 +38,7 @@ export const LoginPage = () => {
     onSuccess: (response) => {
       const loginData = response.data
       if (response.isSuccess && loginData) {
-        setAuth(loginData.token, loginData.user)
+        setAuth(loginData.accessToken, loginData.user)
         message.success('Đăng nhập thành công')
         const redirectPath = from || (loginData.user.role === 'Admin' ? ROUTES.ADMIN : loginData.user.role === 'Lecturer' ? ROUTES.LECTURER : ROUTES.STUDENT)
         navigate(redirectPath, { replace: true })

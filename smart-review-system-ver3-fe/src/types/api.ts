@@ -10,14 +10,16 @@ export interface ApiResponse<T> {
 export interface UserInfo {
   id: number
   email: string
-  fullName: string
+  fullName?: string
   role: string
+  forceChangePassword?: boolean
   studentCode?: string
   lecturerCode?: string
 }
 
 export interface LoginResponse {
-  token: string
-  expiresAt: string
+  accessToken: string
+  refreshToken: string
+  accessTokenExpiry: string
   user: UserInfo
 }
