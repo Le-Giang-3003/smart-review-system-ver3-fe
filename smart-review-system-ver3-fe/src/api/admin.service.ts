@@ -37,8 +37,8 @@ export const reviewPeriodService = {
   update: (id: number, data: Record<string, unknown>) =>
     apiClient.put<ApiResponse<ReviewPeriod>>(`/ReviewPeriods/${id}`, data),
   delete: (id: number) => apiClient.delete<ApiResponse<null>>(`/ReviewPeriods/${id}`),
-  open: (id: number) => apiClient.patch<ApiResponse<ReviewPeriod>>(`/ReviewPeriods/${id}/transition`, { targetStatus: 1 }),
-  close: (id: number) => apiClient.patch<ApiResponse<ReviewPeriod>>(`/ReviewPeriods/${id}/transition`, { targetStatus: 5 }),
+  transitionStatus: (id: number, targetStatus: number) =>
+    apiClient.patch<ApiResponse<ReviewPeriod>>(`/ReviewPeriods/${id}/transition`, { targetStatus }),
 }
 
 // Review Slots

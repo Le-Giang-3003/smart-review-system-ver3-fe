@@ -74,23 +74,12 @@ export const ReviewPeriodsPage = () => {
     },
   })
 
-  const openMutation = useMutation({
-    mutationFn: reviewPeriodService.open,
+  const transitionMutation = useMutation({
+    mutationFn: ({ id, targetStatus }: { id: number; targetStatus: number }) =>
+      reviewPeriodService.transitionStatus(id, targetStatus),
     onSuccess: (res) => {
       if (res.data.isSuccess) {
-        message.success('Mở đợt review thành công')
-        queryClient.invalidateQueries({ queryKey: ['review-periods'] })
-      } else {
-        message.error(res.data.message)
-      }
-    },
-  })
-
-  const closeMutation = useMutation({
-    mutationFn: reviewPeriodService.close,
-    onSuccess: (res) => {
-      if (res.data.isSuccess) {
-        message.success('Đóng đợt review thành công')
+        message.success('Chuyển trạng thái thành công')
         queryClient.invalidateQueries({ queryKey: ['review-periods'] })
       } else {
         message.error(res.data.message)
@@ -168,20 +157,50 @@ export const ReviewPeriodsPage = () => {
             <Button
               type="link"
               icon={<PlayCircleOutlined />}
-              onClick={() => openMutation.mutate(record.id)}
+              onClick={() => transitionMutation.mutate({ id: record.id, targetStatus: 1 })}
               size="small"
             >
-              Mở
+              Mở đăng ký
             </Button>
           )}
           {record.status === 'Open' && (
             <Button
               type="link"
               icon={<StopOutlined />}
-              onClick={() => closeMutation.mutate(record.id)}
+              onClick={() => transitionMutation.mutate({ id: record.id, targetStatus: 2 })}
               size="small"
             >
-              Đóng
+              Chốt đăng ký
+            </Button>
+          )}
+          {record.status === 'Scheduling' && (
+            <Button
+              type="link"
+              icon={<PlayCircleOutlined />}
+              onClick={() => transitionMutation.mutate({ id: record.id, targetStatus: 3 })}
+              size="small"
+            >
+              Chốt lịch
+            </Button>
+          )}
+          {record.status === 'Scheduled' && (
+            <Button
+              type="link"
+              icon={<PlayCircleOutlined />}
+              onClick={() => transitionMutation.mutate({ id: record.id, targetStatus: 4 })}
+              size="small"
+            >
+              Bắt đầu review
+            </Button>
+          )}
+          {record.status === 'InProgress' && (
+            <Button
+              type="link"
+              icon={<StopOutlined />}
+              onClick={() => transitionMutation.mutate({ id: record.id, targetStatus: 5 })}
+              size="small"
+            >
+              Kết thúc
             </Button>
           )}
           <Button
