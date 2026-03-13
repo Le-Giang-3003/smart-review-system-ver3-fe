@@ -13,6 +13,9 @@ export interface Semester {
   startDate: string; // From DateOnly
   endDate: string; // From DateOnly
   isActive: boolean;
+  academicYear: string;
+  semesterNumber: number;
+  description?: string;
   reviewPeriodCount: number;
   createdAt: string;
 }
@@ -99,6 +102,12 @@ export interface Topic {
   supervisorId: number;
   supervisorName: string;
   keywords: string[];
+  level: string;
+  isActive: boolean;
+  maxGroups: number;
+  requiredSkills: string;
+  expectedOutcomes: string;
+  tags: Tag[]; // or string[] depending on usage, TS error on tags but maybe Tag[]
   groupId?: number;
   groupName?: string;
   createdAt: string;
@@ -121,10 +130,26 @@ export interface ReviewPeriod {
   semesterId: number;
   semesterCode: string;
   round: string;
+  reviewRound: string;
+  description: string;
   status: string;
   startDate: string; // From DateTime
   endDate: string; // From DateTime
   slotCount: number;
+  maxSlotsPerDay: number;
+  maxGroupsPerSlot: number;
+  reviewDurationMinutes: number;
+  minLecturersPerSlot: number;
+  maxLecturersPerSlot: number;
+  councilSize: number;
+  lecturerRegistrationDeadline: string;
+  studentRegistrationDeadline: string;
+  weightJaccard: number;
+  weightPreference: number;
+  weightInstructorPresence: number;
+  weightReviewInheritance: number;
+  weightHistoryDiff: number;
+  weightLoadImbalance: number;
   createdAt: string;
 }
 
@@ -133,8 +158,12 @@ export interface ReviewSlot {
   id: number;
   reviewPeriodId: number;
   date: string; // From DateOnly
+  slotDate: string; // Alias for date or actual prop from BE
+  slotNumber: number;
   startTime: string; // From TimeOnly
   endTime: string; // From TimeOnly
+  location: string;
+  notes: string;
   room?: string;
   maxGroups: number;
   registeredLecturers: number;
@@ -183,6 +212,14 @@ export interface SchedulingResult {
   unschedulableSlots: number;
   assignments: CouncilDetail[]; // Using CouncilDetail which matches structure
   unschedulableReasons: string[];
+}
+
+export interface ScheduleResult extends SchedulingResult {}
+
+export interface ScheduledSession {
+  topicTitle?: string;
+  groupName: string;
+  councilMembers: CouncilMemberDetail[];
 }
 
 export interface ReviewSession {
