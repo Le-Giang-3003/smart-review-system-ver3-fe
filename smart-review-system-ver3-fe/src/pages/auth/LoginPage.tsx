@@ -37,10 +37,25 @@ export const LoginPage = () => {
     mutationFn: authService.login,
     onSuccess: (response) => {
       const loginData = response.data
-      if ((response.isSuccess || response.statusCode === 1000 || response.statusCode === 200) && loginData) {
-        setAuth(loginData.accessToken, loginData.user)
+      if (
+        (response.isSuccess || response.statusCode === 1000 || response.statusCode === 200) &&
+        loginData
+      ) {
+        setAuth(loginData.accessToken, loginData.refreshToken, loginData.user)
         message.success('Đăng nhập thành công')
-        const redirectPath = from || (loginData.user.role === 'Admin' ? ROUTES.ADMIN : loginData.user.role === 'Lecturer' ? ROUTES.LECTURER : ROUTES.STUDENT)
+
+        if (loginData.user.forceChangePassword) {
+          navigate('/profile', { replace: true })
+          return
+        }
+
+        const redirectPath =
+          from ||
+          (loginData.user.role === 'Admin'
+            ? ROUTES.ADMIN
+            : loginData.user.role === 'Lecturer'
+              ? ROUTES.LECTURER
+              : ROUTES.STUDENT)
         navigate(redirectPath, { replace: true })
       } else {
         message.error(response.message || 'Đăng nhập thất bại')
@@ -62,55 +77,63 @@ export const LoginPage = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#f0f2f5',
+        background: 'linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 50%, #FED7AA 100%)',
         padding: '24px',
       }}
     >
       <div
         style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background:
+            'radial-gradient(circle at 20% 50%, rgba(249,115,22,0.08) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(251,146,60,0.06) 0%, transparent 50%)',
+          pointerEvents: 'none',
+        }}
+      />
+      <div
+        style={{
           width: '100%',
-          maxWidth: 420,
+          maxWidth: 440,
           background: '#fff',
-          borderRadius: 16,
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.08)',
-          padding: '48px 40px',
+          borderRadius: 20,
+          boxShadow:
+            '0 4px 6px rgba(0,0,0,0.04), 0 10px 30px rgba(249,115,22,0.1)',
+          padding: '52px 44px',
+          position: 'relative',
         }}
       >
-        {/* Logo & Title */}
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <div
             style={{
-              width: 64,
-              height: 64,
-              background: 'linear-gradient(135deg, #1677ff 0%, #4096ff 100%)',
-              borderRadius: 16,
+              width: 68,
+              height: 68,
+              background: 'linear-gradient(135deg, #F97316 0%, #FB923C 100%)',
+              borderRadius: 18,
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
               marginBottom: 20,
+              boxShadow: '0 4px 14px rgba(249,115,22,0.35)',
             }}
           >
-            <svg
-              viewBox="0 0 24 24"
-              width="32"
-              height="32"
-              fill="white"
-            >
+            <svg viewBox="0 0 24 24" width="34" height="34" fill="white">
               <path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z" />
             </svg>
           </div>
-          <Title level={3} style={{ margin: 0, fontWeight: 600, color: '#1a1a1a' }}>
+          <Title level={3} style={{ margin: 0, fontWeight: 700, color: '#1C1917' }}>
             Smart Review System
           </Title>
-          <Text type="secondary" style={{ fontSize: 14 }}>
+          <Text style={{ fontSize: 14, color: '#78716C', marginTop: 4, display: 'block' }}>
             Đăng nhập để tiếp tục
           </Text>
         </div>
 
-        {/* Form */}
         <Form onFinish={handleSubmit(onSubmit)} layout="vertical" size="large">
           <Form.Item
-            label={<span style={{ fontWeight: 500 }}>Email</span>}
+            label={<span style={{ fontWeight: 500, color: '#44403C' }}>Email</span>}
             validateStatus={errors.email ? 'error' : ''}
             help={errors.email?.message}
             style={{ marginBottom: 20 }}
@@ -121,20 +144,17 @@ export const LoginPage = () => {
               render={({ field }) => (
                 <Input
                   {...field}
-                  prefix={<MailOutlined style={{ color: '#bfbfbf' }} />}
+                  prefix={<MailOutlined style={{ color: '#D6D3D1' }} />}
                   placeholder="Nhập địa chỉ email"
                   autoComplete="email"
-                  style={{
-                    height: 48,
-                    borderRadius: 10,
-                  }}
+                  style={{ height: 48, borderRadius: 10 }}
                 />
               )}
             />
           </Form.Item>
 
           <Form.Item
-            label={<span style={{ fontWeight: 500 }}>Mật khẩu</span>}
+            label={<span style={{ fontWeight: 500, color: '#44403C' }}>Mật khẩu</span>}
             validateStatus={errors.password ? 'error' : ''}
             help={errors.password?.message}
             style={{ marginBottom: 28 }}
@@ -145,13 +165,10 @@ export const LoginPage = () => {
               render={({ field }) => (
                 <Input.Password
                   {...field}
-                  prefix={<LockOutlined style={{ color: '#bfbfbf' }} />}
+                  prefix={<LockOutlined style={{ color: '#D6D3D1' }} />}
                   placeholder="Nhập mật khẩu"
                   autoComplete="current-password"
-                  style={{
-                    height: 48,
-                    borderRadius: 10,
-                  }}
+                  style={{ height: 48, borderRadius: 10 }}
                 />
               )}
             />
@@ -168,6 +185,7 @@ export const LoginPage = () => {
                 borderRadius: 10,
                 fontWeight: 600,
                 fontSize: 15,
+                boxShadow: '0 4px 14px rgba(249,115,22,0.35)',
               }}
             >
               Đăng nhập
@@ -175,9 +193,12 @@ export const LoginPage = () => {
           </Form.Item>
         </Form>
 
-        {/* Forgot password */}
-        <div style={{ textAlign: 'center', marginTop: 16 }}>
-          <Button type="link" style={{ padding: 0, fontSize: 14 }}>
+        <div style={{ textAlign: 'center', marginTop: 12 }}>
+          <Button
+            type="link"
+            style={{ padding: 0, fontSize: 14, color: '#F97316' }}
+            onClick={() => navigate(ROUTES.FORGOT_PASSWORD)}
+          >
             Quên mật khẩu?
           </Button>
         </div>

@@ -16,26 +16,31 @@ export const StudentsPage = () => {
   const queryClient = useQueryClient()
   const { modal, message } = App.useApp()
 
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['students'] })
+
   const { data: students = [], isLoading } = useQuery({
     queryKey: ['students'],
     queryFn: async () => {
       const res = await studentService.getAll()
-      return res.data?.data?.items || res.data?.data || [] // Support paginated or array
+      return res.data?.data?.items || res.data?.data || []
     },
   })
 
-  // Mutations
   const createMutation = useMutation({
     mutationFn: studentService.create,
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Thêm sinh viên thành công')
-        queryClient.invalidateQueries({ queryKey: ['students'] })
         setModalOpen(false)
         form.resetFields()
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Thêm thất bại')
       }
+      invalidate()
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      invalidate()
     },
   })
 
@@ -43,47 +48,55 @@ export const StudentsPage = () => {
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
       studentService.update(id, data),
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Cập nhật thành công')
-        queryClient.invalidateQueries({ queryKey: ['students'] })
         setModalOpen(false)
         setEditingId(null)
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Cập nhật thất bại')
       }
+      invalidate()
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      invalidate()
     },
   })
 
   const deleteMutation = useMutation({
     mutationFn: studentService.delete,
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Xóa thành công')
-        queryClient.invalidateQueries({ queryKey: ['students'] })
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Xóa thất bại')
       }
+      invalidate()
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      invalidate()
     },
   })
 
   const importMutation = useMutation({
     mutationFn: studentService.import,
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Import thành công')
-        queryClient.invalidateQueries({ queryKey: ['students'] })
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Import thất bại')
       }
+      invalidate()
       if (fileInputRef.current) fileInputRef.current.value = ''
     },
     onError: () => {
       message.error('Có lỗi xảy ra khi import')
+      invalidate()
       if (fileInputRef.current) fileInputRef.current.value = ''
     }
   })
 
-  // Handlers
   const openCreate = () => {
     form.resetFields()
     setEditingId(null)

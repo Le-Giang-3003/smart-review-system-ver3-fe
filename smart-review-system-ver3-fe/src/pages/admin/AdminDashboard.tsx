@@ -1,11 +1,21 @@
-import { Card, Row, Col, Statistic, Spin, Alert, Table } from 'antd'
+import { Card, Row, Col, Statistic, Spin, Alert, Table, Tag } from 'antd'
 import { useQuery } from '@tanstack/react-query'
-import { FileTextOutlined, TeamOutlined } from '@ant-design/icons'
+import {
+  TeamOutlined,
+  FileTextOutlined,
+  BookOutlined,
+  CalendarOutlined,
+} from '@ant-design/icons'
 import { dashboardService } from '@/api/admin.service'
 import { PageWrapper } from '@/components/common/PageWrapper'
+import { PERIOD_STATUS_LABELS, PERIOD_STATUS_COLORS, REVIEW_ROUND_LABELS } from '@/constants'
 
 export const AdminDashboard = () => {
-  const { data: dashboardData, isLoading, error } = useQuery({
+  const {
+    data: dashboardData,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['admin-dashboard'],
     queryFn: async () => {
       const res = await dashboardService.getAdminDashboard()
@@ -16,7 +26,7 @@ export const AdminDashboard = () => {
   if (isLoading) {
     return (
       <PageWrapper title="Tổng quan">
-        <div style={{ textAlign: 'center', padding: '50px' }}>
+        <div style={{ textAlign: 'center', padding: 60 }}>
           <Spin size="large" />
         </div>
       </PageWrapper>
@@ -25,9 +35,14 @@ export const AdminDashboard = () => {
 
   if (error || !dashboardData) {
     return (
-       <PageWrapper title="Tổng quan">
-         <Alert message="Lỗi" description="Không thể tải dữ liệu dashboard." type="error" showIcon />
-       </PageWrapper>
+      <PageWrapper title="Tổng quan">
+        <Alert
+          message="Lỗi"
+          description="Không thể tải dữ liệu dashboard."
+          type="error"
+          showIcon
+        />
+      </PageWrapper>
     )
   }
 
@@ -42,61 +57,79 @@ export const AdminDashboard = () => {
 
   const reviewPeriodColumns = [
     { title: 'Tên đợt', dataIndex: 'name' },
-    { title: 'Vòng', dataIndex: 'round' },
-    { title: 'Trạng thái', dataIndex: 'status' },
+    {
+      title: 'Vòng',
+      dataIndex: 'round',
+      render: (r: number) => REVIEW_ROUND_LABELS[r] ?? `Vòng ${r}`,
+    },
+    {
+      title: 'Trạng thái',
+      dataIndex: 'status',
+      render: (s: number) => (
+        <Tag color={PERIOD_STATUS_COLORS[s] || 'default'}>
+          {PERIOD_STATUS_LABELS[s] ?? s}
+        </Tag>
+      ),
+    },
     { title: 'Số slot', dataIndex: 'slotCount' },
   ]
 
   return (
-    <PageWrapper title="Tổng quan">
-      {activeSemester && (
-        <Alert
-           message={`Học kỳ hiện tại: ${activeSemester.code} - ${activeSemester.name}`}
-           type="info"
-           showIcon
-           style={{ marginBottom: 16 }}
-        />
-      )}
-      <Row gutter={[16, 16]}>
+    <PageWrapper
+      title="Tổng quan"
+      subtitle={
+        activeSemester
+          ? `Học kỳ hiện tại: ${activeSemester.code} - ${activeSemester.name}`
+          : undefined
+      }
+    >
+      <Row gutter={[20, 20]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card className="stat-card" style={{ borderTop: '3px solid #F97316' }}>
             <Statistic
               title="Giảng viên"
               value={totalLecturers}
-              prefix={<TeamOutlined />}
+              prefix={<TeamOutlined style={{ color: '#F97316' }} />}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card className="stat-card" style={{ borderTop: '3px solid #3B82F6' }}>
             <Statistic
               title="Sinh viên"
               value={totalStudents}
-              prefix={<TeamOutlined />}
+              prefix={<TeamOutlined style={{ color: '#3B82F6' }} />}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card className="stat-card" style={{ borderTop: '3px solid #22C55E' }}>
             <Statistic
               title="Nhóm"
               value={totalGroups}
-              prefix={<TeamOutlined />}
+              prefix={<BookOutlined style={{ color: '#22C55E' }} />}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card className="stat-card" style={{ borderTop: '3px solid #A855F7' }}>
             <Statistic
               title="Đề tài"
               value={totalTopics}
-              prefix={<FileTextOutlined />}
+              prefix={<FileTextOutlined style={{ color: '#A855F7' }} />}
             />
           </Card>
         </Col>
       </Row>
 
-      <Card title="Các đợt review" style={{ marginTop: 24 }}>
+      <Card
+        title={
+          <span>
+            <CalendarOutlined style={{ color: '#F97316', marginRight: 8 }} />
+            Các đợt review
+          </span>
+        }
+      >
         <Table
           columns={reviewPeriodColumns}
           dataSource={reviewPeriods}
@@ -107,4 +140,3 @@ export const AdminDashboard = () => {
     </PageWrapper>
   )
 }
-

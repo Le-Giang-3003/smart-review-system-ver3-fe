@@ -16,6 +16,8 @@ export const ReviewSlotsPage = () => {
   const queryClient = useQueryClient()
   const { modal, message } = App.useApp()
 
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['review-slots'] })
+
   const { data: periods = [] } = useQuery({
     queryKey: ['review-periods'],
     queryFn: async () => {
@@ -35,14 +37,18 @@ export const ReviewSlotsPage = () => {
   const createMutation = useMutation({
     mutationFn: reviewSlotService.create,
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Tạo slot thành công')
-        queryClient.invalidateQueries({ queryKey: ['review-slots'] })
         setModalOpen(false)
         form.resetFields()
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Tạo thất bại')
       }
+      invalidate()
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      invalidate()
     },
   })
 
@@ -50,27 +56,35 @@ export const ReviewSlotsPage = () => {
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
       reviewSlotService.update(id, data),
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Cập nhật thành công')
-        queryClient.invalidateQueries({ queryKey: ['review-slots'] })
         setModalOpen(false)
         setEditingId(null)
         form.resetFields()
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Cập nhật thất bại')
       }
+      invalidate()
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      invalidate()
     },
   })
 
   const deleteMutation = useMutation({
     mutationFn: reviewSlotService.delete,
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Xóa thành công')
-        queryClient.invalidateQueries({ queryKey: ['review-slots'] })
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Xóa thất bại')
       }
+      invalidate()
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      invalidate()
     },
   })
 
@@ -87,6 +101,7 @@ export const ReviewSlotsPage = () => {
       startTime: dayjs(record.startTime, 'HH:mm'),
       endTime: dayjs(record.endTime, 'HH:mm'),
       room: record.room,
+      maxGroups: record.maxGroups,
     })
     setEditingId(record.id)
     setModalOpen(true)
@@ -100,6 +115,7 @@ export const ReviewSlotsPage = () => {
         startTime: values.startTime.format('HH:mm'),
         endTime: values.endTime.format('HH:mm'),
         room: values.room,
+        maxGroups: values.maxGroups || 5,
       }
       if (editingId) {
         updateMutation.mutate({ id: editingId, data: { ...payload, id: editingId } })
@@ -111,7 +127,6 @@ export const ReviewSlotsPage = () => {
 
   const columns = [
     { title: 'ID', dataIndex: 'id', width: 60 },
-    { title: 'Đợt review', dataIndex: 'reviewPeriodName' },
     {
       title: 'Ngày',
       dataIndex: 'date',
@@ -121,12 +136,10 @@ export const ReviewSlotsPage = () => {
       title: 'Thời gian',
       render: (_: unknown, r: ReviewSlot) => `${formatTime(r.startTime)} - ${formatTime(r.endTime)}`,
     },
-    { title: 'Phòng', dataIndex: 'room' },
-    {
-      title: 'Trạng thái',
-      dataIndex: 'createdAt',
-      render: (d: string) => formatDate(d),
-    },
+    { title: 'Phòng', dataIndex: 'room', render: (v: string) => v || '-' },
+    { title: 'Nhóm tối đa', dataIndex: 'maxGroups', align: 'center' as const },
+    { title: 'GV đã ĐK', dataIndex: 'registeredLecturers', align: 'center' as const, render: (v: number) => v ?? 0 },
+    { title: 'Nhóm đã ĐK', dataIndex: 'registeredGroups', align: 'center' as const, render: (v: number) => v ?? 0 },
     {
       title: 'Thao tác',
       key: 'actions',
@@ -201,6 +214,9 @@ export const ReviewSlotsPage = () => {
           </Space>
           <Form.Item name="room" label="Phòng">
             <Input placeholder="VD: Phòng A101" />
+          </Form.Item>
+          <Form.Item name="maxGroups" label="Số nhóm tối đa">
+            <Input type="number" min={1} placeholder="5" />
           </Form.Item>
           <Form.Item>
             <Space>

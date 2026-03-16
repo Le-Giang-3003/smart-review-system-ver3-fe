@@ -5,7 +5,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { reviewPeriodService, semesterService } from '@/api/admin.service'
 import { formatDate } from '@/utils/format'
-// Constants handled dynamically
 import { PageWrapper } from '@/components/common/PageWrapper'
 import type { ReviewPeriod } from '@/types/entities'
 
@@ -15,6 +14,8 @@ export const ReviewPeriodsPage = () => {
   const [form] = Form.useForm()
   const queryClient = useQueryClient()
   const { modal, message } = App.useApp()
+
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['review-periods'] })
 
   const { data: semesters = [] } = useQuery({
     queryKey: ['semesters'],
@@ -35,14 +36,18 @@ export const ReviewPeriodsPage = () => {
   const createMutation = useMutation({
     mutationFn: reviewPeriodService.create,
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Tạo đợt review thành công')
-        queryClient.invalidateQueries({ queryKey: ['review-periods'] })
         setModalOpen(false)
         form.resetFields()
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Tạo thất bại')
       }
+      invalidate()
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      invalidate()
     },
   })
 
@@ -50,27 +55,35 @@ export const ReviewPeriodsPage = () => {
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
       reviewPeriodService.update(id, data),
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Cập nhật thành công')
-        queryClient.invalidateQueries({ queryKey: ['review-periods'] })
         setModalOpen(false)
         setEditingId(null)
         form.resetFields()
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Cập nhật thất bại')
       }
+      invalidate()
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      invalidate()
     },
   })
 
   const deleteMutation = useMutation({
     mutationFn: reviewPeriodService.delete,
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Xóa thành công')
-        queryClient.invalidateQueries({ queryKey: ['review-periods'] })
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Xóa thất bại')
       }
+      invalidate()
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      invalidate()
     },
   })
 
@@ -78,12 +91,16 @@ export const ReviewPeriodsPage = () => {
     mutationFn: ({ id, targetStatus }: { id: number; targetStatus: number }) =>
       reviewPeriodService.transitionStatus(id, targetStatus),
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Chuyển trạng thái thành công')
-        queryClient.invalidateQueries({ queryKey: ['review-periods'] })
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Chuyển trạng thái thất bại')
       }
+      invalidate()
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      invalidate()
     },
   })
 
@@ -129,7 +146,7 @@ export const ReviewPeriodsPage = () => {
     {
       title: 'Vòng',
       dataIndex: 'round',
-      render: (r: string) => r,
+      render: (r: string | number) => typeof r === 'number' ? `Vòng ${r}` : r,
     },
     {
       title: 'Bắt đầu',
@@ -150,73 +167,76 @@ export const ReviewPeriodsPage = () => {
       title: 'Thao tác',
       key: 'actions',
       width: 200,
-      render: (_: unknown, record: ReviewPeriod) => (
-        <Space>
-          <Button icon={<EditOutlined />} onClick={() => openEdit(record)} size="small" />
-          {record.status === 'Draft' && (
+      render: (_: unknown, record: ReviewPeriod) => {
+        const s = String(record.status)
+        return (
+          <Space>
+            <Button icon={<EditOutlined />} onClick={() => openEdit(record)} size="small" />
+            {s === 'Draft' && (
+              <Button
+                type="link"
+                icon={<PlayCircleOutlined />}
+                onClick={() => transitionMutation.mutate({ id: record.id, targetStatus: 1 })}
+                size="small"
+              >
+                Mở đăng ký
+              </Button>
+            )}
+            {s === 'Open' && (
+              <Button
+                type="link"
+                icon={<StopOutlined />}
+                onClick={() => transitionMutation.mutate({ id: record.id, targetStatus: 2 })}
+                size="small"
+              >
+                Chốt đăng ký
+              </Button>
+            )}
+            {s === 'Scheduling' && (
+              <Button
+                type="link"
+                icon={<PlayCircleOutlined />}
+                onClick={() => transitionMutation.mutate({ id: record.id, targetStatus: 3 })}
+                size="small"
+              >
+                Chốt lịch
+              </Button>
+            )}
+            {s === 'Scheduled' && (
+              <Button
+                type="link"
+                icon={<PlayCircleOutlined />}
+                onClick={() => transitionMutation.mutate({ id: record.id, targetStatus: 4 })}
+                size="small"
+              >
+                Bắt đầu review
+              </Button>
+            )}
+            {s === 'InProgress' && (
+              <Button
+                type="link"
+                icon={<StopOutlined />}
+                onClick={() => transitionMutation.mutate({ id: record.id, targetStatus: 5 })}
+                size="small"
+              >
+                Kết thúc
+              </Button>
+            )}
             <Button
-              type="link"
-              icon={<PlayCircleOutlined />}
-              onClick={() => transitionMutation.mutate({ id: record.id, targetStatus: 1 })}
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => {
+                modal.confirm({
+                  title: 'Xác nhận xóa',
+                  content: `Xóa đợt review "${record.name}"?`,
+                  onOk: () => deleteMutation.mutate(record.id),
+                })
+              }}
               size="small"
-            >
-              Mở đăng ký
-            </Button>
-          )}
-          {record.status === 'Open' && (
-            <Button
-              type="link"
-              icon={<StopOutlined />}
-              onClick={() => transitionMutation.mutate({ id: record.id, targetStatus: 2 })}
-              size="small"
-            >
-              Chốt đăng ký
-            </Button>
-          )}
-          {record.status === 'Scheduling' && (
-            <Button
-              type="link"
-              icon={<PlayCircleOutlined />}
-              onClick={() => transitionMutation.mutate({ id: record.id, targetStatus: 3 })}
-              size="small"
-            >
-              Chốt lịch
-            </Button>
-          )}
-          {record.status === 'Scheduled' && (
-            <Button
-              type="link"
-              icon={<PlayCircleOutlined />}
-              onClick={() => transitionMutation.mutate({ id: record.id, targetStatus: 4 })}
-              size="small"
-            >
-              Bắt đầu review
-            </Button>
-          )}
-          {record.status === 'InProgress' && (
-            <Button
-              type="link"
-              icon={<StopOutlined />}
-              onClick={() => transitionMutation.mutate({ id: record.id, targetStatus: 5 })}
-              size="small"
-            >
-              Kết thúc
-            </Button>
-          )}
-          <Button
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => {
-              modal.confirm({
-                title: 'Xác nhận xóa',
-                content: `Xóa đợt review "${record.name}"?`,
-                onOk: () => deleteMutation.mutate(record.id),
-              })
-            }}
-            size="small"
-          />
-        </Space>
-      ),
+            />
+          </Space>
+        )
+      },
     },
   ]
 

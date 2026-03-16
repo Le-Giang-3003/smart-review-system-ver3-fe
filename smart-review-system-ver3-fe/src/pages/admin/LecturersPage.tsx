@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { Table, Button, Space, Modal, Form, Select, Input, App, Tabs, Tag, Row, Col } from 'antd'
+import { Table, Button, Space, Modal, Form, Select, Input, App, Tabs, Row, Col } from 'antd'
 import { 
   PlusOutlined, EditOutlined, DeleteOutlined, 
   LinkOutlined, UploadOutlined, BuildOutlined 
@@ -27,11 +27,14 @@ export const LecturersPage = () => {
   const queryClient = useQueryClient()
   const { modal, message } = App.useApp()
 
+  const invalidateLecturers = () => queryClient.invalidateQueries({ queryKey: ['lecturers'] })
+  const invalidateCompat = () => queryClient.invalidateQueries({ queryKey: ['lecturer-compatibilities'] })
+
   const { data: lecturers = [], isLoading } = useQuery({
     queryKey: ['lecturers'],
     queryFn: async () => {
       const res = await lecturerService.getAll()
-      return res.data?.data?.items || res.data?.data || [] // Support paginated or array
+      return res.data?.data?.items || res.data?.data || []
     },
   })
 
@@ -43,18 +46,21 @@ export const LecturersPage = () => {
     },
   })
 
-  // Mutations
   const createMutation = useMutation({
     mutationFn: lecturerService.create,
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Thêm giảng viên thành công')
-        queryClient.invalidateQueries({ queryKey: ['lecturers'] })
         setModalOpen(false)
         form.resetFields()
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Thêm thất bại')
       }
+      invalidateLecturers()
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      invalidateLecturers()
     },
   })
 
@@ -62,42 +68,51 @@ export const LecturersPage = () => {
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
       lecturerService.update(id, data),
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Cập nhật thành công')
-        queryClient.invalidateQueries({ queryKey: ['lecturers'] })
         setModalOpen(false)
         setEditingId(null)
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Cập nhật thất bại')
       }
+      invalidateLecturers()
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      invalidateLecturers()
     },
   })
 
   const deleteMutation = useMutation({
     mutationFn: lecturerService.delete,
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Xóa thành công')
-        queryClient.invalidateQueries({ queryKey: ['lecturers'] })
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Xóa thất bại')
       }
+      invalidateLecturers()
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      invalidateLecturers()
     },
   })
 
   const importMutation = useMutation({
     mutationFn: lecturerService.import,
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Import thành công')
-        queryClient.invalidateQueries({ queryKey: ['lecturers'] })
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Import thất bại')
       }
+      invalidateLecturers()
       if (fileInputRef.current) fileInputRef.current.value = ''
     },
     onError: () => {
       message.error('Có lỗi xảy ra khi import')
+      invalidateLecturers()
       if (fileInputRef.current) fileInputRef.current.value = ''
     }
   })
@@ -105,26 +120,34 @@ export const LecturersPage = () => {
   const createCompatMutation = useMutation({
     mutationFn: lecturerService.createCompatibility,
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Thêm tương thích thành công')
-        queryClient.invalidateQueries({ queryKey: ['lecturer-compatibilities'] })
         setCompatModalOpen(false)
         compatForm.resetFields()
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Thêm thất bại')
       }
+      invalidateCompat()
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      invalidateCompat()
     },
   })
 
   const deleteCompatMutation = useMutation({
     mutationFn: lecturerService.deleteCompatibility,
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Xóa tương thích thành công')
-        queryClient.invalidateQueries({ queryKey: ['lecturer-compatibilities'] })
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Xóa thất bại')
       }
+      invalidateCompat()
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      invalidateCompat()
     },
   })
 
@@ -132,18 +155,21 @@ export const LecturersPage = () => {
     mutationFn: (data: { lecturerIds: number[]; minTopics: number; maxTopics: number }) =>
       lecturerService.batchUpdateWorkload(data.lecturerIds, data.minTopics, data.maxTopics),
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Cập nhật tải thành công')
-        queryClient.invalidateQueries({ queryKey: ['lecturers'] })
         setLoadModalOpen(false)
         setSelectedLecturerId(null)
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Cập nhật thất bại')
       }
+      invalidateLecturers()
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      invalidateLecturers()
     },
   })
 
-  // Handlers
   const openCreate = () => {
     form.resetFields()
     form.setFieldsValue({ minTopics: 0, maxTopics: 3 })
@@ -160,7 +186,6 @@ export const LecturersPage = () => {
       department: record.department,
       minTopics: record.minTopics,
       maxTopics: record.maxTopics,
-      expertises: record.expertises?.join(', '), // Assuming we accept comma-separated strings in UI for expertises for simplicity
     })
     setEditingId(record.id)
     setModalOpen(true)
@@ -221,13 +246,6 @@ export const LecturersPage = () => {
     {
       title: 'Tải HD',
       render: (_: unknown, record: Lecturer) => `${record.minTopics} - ${record.maxTopics}`,
-    },
-    {
-      title: 'Trạng thái',
-      dataIndex: 'isActive',
-      render: (a: boolean) => (
-        <Tag color={a ? 'green' : 'default'}>{a ? 'Hoạt động' : 'Tạm dừng'}</Tag>
-      ),
     },
     {
       title: 'Thao tác',
@@ -313,15 +331,13 @@ export const LecturersPage = () => {
             key: 'lecturers',
             label: 'Danh sách giảng viên',
             children: (
-              <>
-                <Table
-                  columns={lecturerColumns}
-                  dataSource={lecturers}
-                  rowKey="id"
-                  loading={isLoading}
-                  pagination={{ pageSize: 12 }}
-                />
-              </>
+              <Table
+                columns={lecturerColumns}
+                dataSource={lecturers}
+                rowKey="id"
+                loading={isLoading}
+                pagination={{ pageSize: 12 }}
+              />
             ),
           },
           {

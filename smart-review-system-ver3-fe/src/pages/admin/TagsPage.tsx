@@ -13,6 +13,8 @@ export const TagsPage = () => {
   const queryClient = useQueryClient()
   const { modal, message } = App.useApp()
 
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['tags'] })
+
   const { data: tags = [], isLoading } = useQuery({
     queryKey: ['tags'],
     queryFn: async () => {
@@ -24,14 +26,18 @@ export const TagsPage = () => {
   const createMutation = useMutation({
     mutationFn: tagService.create,
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Tạo tag thành công')
-        queryClient.invalidateQueries({ queryKey: ['tags'] })
         setModalOpen(false)
         form.resetFields()
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Tạo thất bại')
       }
+      invalidate()
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      invalidate()
     },
   })
 
@@ -39,27 +45,35 @@ export const TagsPage = () => {
     mutationFn: ({ id, data }: { id: number; data: { id: number; name: string; description?: string } }) =>
       tagService.update(id, data),
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Cập nhật thành công')
-        queryClient.invalidateQueries({ queryKey: ['tags'] })
         setModalOpen(false)
         setEditingId(null)
         form.resetFields()
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Cập nhật thất bại')
       }
+      invalidate()
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      invalidate()
     },
   })
 
   const deleteMutation = useMutation({
     mutationFn: tagService.delete,
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Xóa thành công')
-        queryClient.invalidateQueries({ queryKey: ['tags'] })
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Xóa thất bại')
       }
+      invalidate()
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      invalidate()
     },
   })
 

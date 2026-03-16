@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Card, Button, Select, message, Table, Alert } from 'antd'
+import { Card, Button, Select, Table, Alert, App } from 'antd'
 import { ThunderboltOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { schedulingService, reviewPeriodService } from '@/api/admin.service'
@@ -10,6 +10,7 @@ import type { SchedulingResult } from '@/types/entities'
 export const SchedulingPage = () => {
   const [selectedPeriodId, setSelectedPeriodId] = useState<number | undefined>()
   const queryClient = useQueryClient()
+  const { message } = App.useApp()
 
   const { data: periods = [] } = useQuery({
     queryKey: ['review-periods'],
@@ -32,16 +33,16 @@ export const SchedulingPage = () => {
   const runMutation = useMutation({
     mutationFn: (periodId: number) => schedulingService.run(periodId),
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Chạy thuật toán thành công')
-        queryClient.invalidateQueries({ queryKey: ['scheduling-result', selectedPeriodId] })
       } else {
         message.error(res.data.message || 'Chạy thuật toán thất bại')
       }
+      queryClient.invalidateQueries({ queryKey: ['scheduling-result', selectedPeriodId] })
     },
     onError: (error: any) => {
-      const errorMessage = error.response?.data?.message || 'Lên lịch thất bại'
-      message.error(errorMessage)
+      message.error(error.response?.data?.message || 'Lên lịch thất bại')
+      queryClient.invalidateQueries({ queryKey: ['scheduling-result', selectedPeriodId] })
     },
   })
 

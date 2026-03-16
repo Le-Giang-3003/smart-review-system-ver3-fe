@@ -21,7 +21,7 @@ export const TopicsPage = () => {
     queryFn: async () => {
       const res = await topicService.getAll()
       const data = res.data?.data as any
-      return data?.items || data || [] // Support paginated or array
+      return data?.items || data || []
     },
   })
 
@@ -36,14 +36,18 @@ export const TopicsPage = () => {
   const createMutation = useMutation({
     mutationFn: topicService.create,
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Tạo đề tài thành công')
-        queryClient.invalidateQueries({ queryKey: ['topics'] })
         setModalOpen(false)
         form.resetFields()
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Tạo đề tài thất bại')
       }
+      queryClient.invalidateQueries({ queryKey: ['topics'] })
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      queryClient.invalidateQueries({ queryKey: ['topics'] })
     },
   })
 
@@ -51,27 +55,35 @@ export const TopicsPage = () => {
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
       topicService.update(id, data),
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Cập nhật thành công')
-        queryClient.invalidateQueries({ queryKey: ['topics'] })
         setModalOpen(false)
         setEditingId(null)
         form.resetFields()
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Cập nhật thất bại')
       }
+      queryClient.invalidateQueries({ queryKey: ['topics'] })
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      queryClient.invalidateQueries({ queryKey: ['topics'] })
     },
   })
 
   const deleteMutation = useMutation({
     mutationFn: topicService.delete,
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Xóa thành công')
-        queryClient.invalidateQueries({ queryKey: ['topics'] })
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Xóa thất bại')
       }
+      queryClient.invalidateQueries({ queryKey: ['topics'] })
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      queryClient.invalidateQueries({ queryKey: ['topics'] })
     },
   })
 
@@ -79,14 +91,18 @@ export const TopicsPage = () => {
     mutationFn: ({ id, keywords }: { id: number; keywords: string[] }) =>
       topicService.assignTags(id, keywords),
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Gán tags thành công')
-        queryClient.invalidateQueries({ queryKey: ['topics'] })
         setTagModalOpen(false)
         setSelectedTopicId(null)
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Gán tags thất bại')
       }
+      queryClient.invalidateQueries({ queryKey: ['topics'] })
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      queryClient.invalidateQueries({ queryKey: ['topics'] })
     },
   })
 
@@ -251,4 +267,3 @@ export const TopicsPage = () => {
     </PageWrapper>
   )
 }
-

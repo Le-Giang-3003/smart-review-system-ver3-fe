@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Table, Button, Space, Select, message } from 'antd'
+import { Table, Button, Space, Select, App } from 'antd'
 import { CheckOutlined, CloseOutlined, LockOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { reviewSessionService, reviewPeriodService } from '@/api/admin.service'
@@ -10,6 +10,9 @@ import type { ReviewSession } from '@/types/entities'
 export const ReviewSessionsPage = () => {
   const [periodFilter, setPeriodFilter] = useState<number | undefined>()
   const queryClient = useQueryClient()
+  const { message } = App.useApp()
+
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['review-sessions'] })
 
   const { data: periods = [] } = useQuery({
     queryKey: ['review-periods'],
@@ -30,12 +33,16 @@ export const ReviewSessionsPage = () => {
   const approveMutation = useMutation({
     mutationFn: reviewSessionService.approve,
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Phê duyệt thành công')
-        queryClient.invalidateQueries({ queryKey: ['review-sessions'] })
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Phê duyệt thất bại')
       }
+      invalidate()
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      invalidate()
     },
   })
 
@@ -43,24 +50,32 @@ export const ReviewSessionsPage = () => {
     mutationFn: ({ id, reason }: { id: number; reason: string }) =>
       reviewSessionService.reject(id, reason),
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Từ chối thành công')
-        queryClient.invalidateQueries({ queryKey: ['review-sessions'] })
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Từ chối thất bại')
       }
+      invalidate()
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      invalidate()
     },
   })
 
   const lockMutation = useMutation({
     mutationFn: reviewSessionService.lock,
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Khóa phiên thành công')
-        queryClient.invalidateQueries({ queryKey: ['review-sessions'] })
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Khóa thất bại')
       }
+      invalidate()
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      invalidate()
     },
   })
 

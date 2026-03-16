@@ -22,7 +22,7 @@ export const GroupsPage = () => {
   const filteredGroups = groups.filter((g: Group) => 
     g.groupName.toLowerCase().includes(searchText.toLowerCase()) ||
     (g.topicTitle && g.topicTitle.toLowerCase().includes(searchText.toLowerCase())) ||
-    g.leaderName.toLowerCase().includes(searchText.toLowerCase())
+    (g.leaderName && g.leaderName.toLowerCase().includes(searchText.toLowerCase()))
   )
 
   const columns = [

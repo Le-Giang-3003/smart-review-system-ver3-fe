@@ -1,12 +1,11 @@
 import { useState } from 'react'
-import { Table, Button, Space, Modal, Form, Input, DatePicker, App } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
+import { Table, Button, Space, Modal, Form, Input, DatePicker, App, Tag, Popconfirm } from 'antd'
+import { PlusOutlined, EditOutlined, DeleteOutlined, CheckCircleOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { semesterService } from '@/api/admin.service'
 import { formatDate } from '@/utils/format'
 import { PageWrapper } from '@/components/common/PageWrapper'
-import { SEMESTER_STATUS_LABELS } from '@/constants'
 import type { Semester } from '@/types/entities'
 
 export const SemestersPage = () => {
@@ -15,6 +14,8 @@ export const SemestersPage = () => {
   const [form] = Form.useForm()
   const queryClient = useQueryClient()
   const { modal, message } = App.useApp()
+
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['semesters'] })
 
   const { data: semesters = [], isLoading } = useQuery({
     queryKey: ['semesters'],
@@ -27,42 +28,70 @@ export const SemestersPage = () => {
   const createMutation = useMutation({
     mutationFn: semesterService.create,
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Tạo học kỳ thành công')
-        queryClient.invalidateQueries({ queryKey: ['semesters'] })
         setModalOpen(false)
         form.resetFields()
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Tạo thất bại')
       }
+      invalidate()
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      invalidate()
     },
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: { code: string; name: string; startDate: string; endDate: string; } }) =>
+    mutationFn: ({ id, data }: { id: number; data: { code: string; name: string; startDate: string; endDate: string } }) =>
       semesterService.update(id, data),
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Cập nhật thành công')
-        queryClient.invalidateQueries({ queryKey: ['semesters'] })
         setModalOpen(false)
         setEditingId(null)
         form.resetFields()
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Cập nhật thất bại')
       }
+      invalidate()
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      invalidate()
     },
   })
 
   const deleteMutation = useMutation({
     mutationFn: semesterService.delete,
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (res.data?.isSuccess !== false) {
         message.success('Xóa thành công')
-        queryClient.invalidateQueries({ queryKey: ['semesters'] })
       } else {
-        message.error(res.data.message)
+        message.error(res.data.message || 'Xóa thất bại')
       }
+      invalidate()
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      invalidate()
+    },
+  })
+
+  const activateMutation = useMutation({
+    mutationFn: (id: number) => semesterService.activate(id, true),
+    onSuccess: (res) => {
+      if (res.data?.isSuccess !== false) {
+        message.success('Kích hoạt học kỳ thành công')
+      } else {
+        message.error(res.data.message || 'Kích hoạt thất bại')
+      }
+      invalidate()
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+      invalidate()
     },
   })
 
@@ -115,14 +144,25 @@ export const SemestersPage = () => {
     },
     {
       title: 'Trạng thái',
-      dataIndex: 'status',
-      render: (s: number) => SEMESTER_STATUS_LABELS[s] ?? s,
+      dataIndex: 'isActive',
+      render: (active: boolean) =>
+        active ? <Tag color="success">Đang hoạt động</Tag> : <Tag color="default">Không hoạt động</Tag>,
     },
     {
       title: 'Thao tác',
       key: 'actions',
       render: (_: unknown, record: Semester) => (
         <Space>
+          {!record.isActive && (
+            <Popconfirm
+              title="Kích hoạt học kỳ này?"
+              onConfirm={() => activateMutation.mutate(record.id)}
+            >
+              <Button icon={<CheckCircleOutlined />} size="small" title="Kích hoạt">
+                Kích hoạt
+              </Button>
+            </Popconfirm>
+          )}
           <Button icon={<EditOutlined />} onClick={() => openEdit(record)} size="small" />
           <Button
             danger
