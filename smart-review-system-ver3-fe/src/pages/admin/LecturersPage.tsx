@@ -9,6 +9,7 @@ import { lecturerService } from '@/api/admin.service'
 import { COMPATIBILITY_TYPE_LABELS } from '@/constants'
 import { PageWrapper } from '@/components/common/PageWrapper'
 import type { Lecturer, LecturerCompatibility } from '@/types/entities'
+import { isApiSuccess } from '@/types/api'
 
 export const LecturersPage = () => {
   const [modalOpen, setModalOpen] = useState(false)
@@ -49,7 +50,7 @@ export const LecturersPage = () => {
   const createMutation = useMutation({
     mutationFn: lecturerService.create,
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (isApiSuccess(res.data)) {
         message.success('Thêm giảng viên thành công')
         setModalOpen(false)
         form.resetFields()
@@ -68,7 +69,7 @@ export const LecturersPage = () => {
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
       lecturerService.update(id, data),
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (isApiSuccess(res.data)) {
         message.success('Cập nhật thành công')
         setModalOpen(false)
         setEditingId(null)
@@ -86,7 +87,7 @@ export const LecturersPage = () => {
   const deleteMutation = useMutation({
     mutationFn: lecturerService.delete,
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (isApiSuccess(res.data)) {
         message.success('Xóa thành công')
       } else {
         message.error(res.data.message || 'Xóa thất bại')
@@ -102,7 +103,7 @@ export const LecturersPage = () => {
   const importMutation = useMutation({
     mutationFn: lecturerService.import,
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (isApiSuccess(res.data)) {
         message.success('Import thành công')
       } else {
         message.error(res.data.message || 'Import thất bại')
@@ -120,7 +121,7 @@ export const LecturersPage = () => {
   const createCompatMutation = useMutation({
     mutationFn: lecturerService.createCompatibility,
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (isApiSuccess(res.data)) {
         message.success('Thêm tương thích thành công')
         setCompatModalOpen(false)
         compatForm.resetFields()
@@ -138,7 +139,7 @@ export const LecturersPage = () => {
   const deleteCompatMutation = useMutation({
     mutationFn: lecturerService.deleteCompatibility,
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (isApiSuccess(res.data)) {
         message.success('Xóa tương thích thành công')
       } else {
         message.error(res.data.message || 'Xóa thất bại')
@@ -155,7 +156,7 @@ export const LecturersPage = () => {
     mutationFn: (data: { lecturerIds: number[]; minTopics: number; maxTopics: number }) =>
       lecturerService.batchUpdateWorkload(data.lecturerIds, data.minTopics, data.maxTopics),
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (isApiSuccess(res.data)) {
         message.success('Cập nhật tải thành công')
         setLoadModalOpen(false)
         setSelectedLecturerId(null)
@@ -279,10 +280,9 @@ export const LecturersPage = () => {
     { title: 'Giảng viên B', dataIndex: 'lecturerBName' },
     {
       title: 'Loại',
-      dataIndex: 'compatibilityType',
+      dataIndex: 'level',
       render: (t: string) => COMPATIBILITY_TYPE_LABELS[t] ?? t,
     },
-    { title: 'Lý do', dataIndex: 'reason' },
     {
       title: 'Thao tác',
       key: 'actions',

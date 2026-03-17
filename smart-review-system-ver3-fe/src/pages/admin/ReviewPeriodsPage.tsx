@@ -6,6 +6,7 @@ import dayjs from 'dayjs'
 import { reviewPeriodService, semesterService } from '@/api/admin.service'
 import { formatDate } from '@/utils/format'
 import { PageWrapper } from '@/components/common/PageWrapper'
+import { isApiSuccess } from '@/types/api'
 import type { ReviewPeriod } from '@/types/entities'
 
 export const ReviewPeriodsPage = () => {
@@ -36,7 +37,7 @@ export const ReviewPeriodsPage = () => {
   const createMutation = useMutation({
     mutationFn: reviewPeriodService.create,
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (isApiSuccess(res.data)) {
         message.success('Tạo đợt review thành công')
         setModalOpen(false)
         form.resetFields()
@@ -55,7 +56,7 @@ export const ReviewPeriodsPage = () => {
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
       reviewPeriodService.update(id, data),
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (isApiSuccess(res.data)) {
         message.success('Cập nhật thành công')
         setModalOpen(false)
         setEditingId(null)
@@ -74,7 +75,7 @@ export const ReviewPeriodsPage = () => {
   const deleteMutation = useMutation({
     mutationFn: reviewPeriodService.delete,
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (isApiSuccess(res.data)) {
         message.success('Xóa thành công')
       } else {
         message.error(res.data.message || 'Xóa thất bại')
@@ -91,7 +92,7 @@ export const ReviewPeriodsPage = () => {
     mutationFn: ({ id, targetStatus }: { id: number; targetStatus: number }) =>
       reviewPeriodService.transitionStatus(id, targetStatus),
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (isApiSuccess(res.data)) {
         message.success('Chuyển trạng thái thành công')
       } else {
         message.error(res.data.message || 'Chuyển trạng thái thất bại')

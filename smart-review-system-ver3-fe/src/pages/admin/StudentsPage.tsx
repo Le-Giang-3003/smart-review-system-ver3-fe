@@ -4,6 +4,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined, UploadOutlined } from '@ant
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { studentService } from '@/api/admin.service'
 import { PageWrapper } from '@/components/common/PageWrapper'
+import { isApiSuccess } from '@/types/api'
 import type { Student } from '@/types/entities'
 
 export const StudentsPage = () => {
@@ -29,7 +30,7 @@ export const StudentsPage = () => {
   const createMutation = useMutation({
     mutationFn: studentService.create,
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (isApiSuccess(res.data)) {
         message.success('Thêm sinh viên thành công')
         setModalOpen(false)
         form.resetFields()
@@ -48,7 +49,7 @@ export const StudentsPage = () => {
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
       studentService.update(id, data),
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (isApiSuccess(res.data)) {
         message.success('Cập nhật thành công')
         setModalOpen(false)
         setEditingId(null)
@@ -66,7 +67,7 @@ export const StudentsPage = () => {
   const deleteMutation = useMutation({
     mutationFn: studentService.delete,
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (isApiSuccess(res.data)) {
         message.success('Xóa thành công')
       } else {
         message.error(res.data.message || 'Xóa thất bại')
@@ -82,7 +83,7 @@ export const StudentsPage = () => {
   const importMutation = useMutation({
     mutationFn: studentService.import,
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (isApiSuccess(res.data)) {
         message.success('Import thành công')
       } else {
         message.error(res.data.message || 'Import thất bại')

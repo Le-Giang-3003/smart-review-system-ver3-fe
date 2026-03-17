@@ -4,6 +4,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { authService } from '@/api/auth.service'
+import { isApiSuccess } from '@/types/api'
 import { PageWrapper } from '@/components/common/PageWrapper'
 import { useAuth } from '@/hooks/useAuth'
 import { ROLE_LABELS, ROLE_COLORS } from '@/constants'
@@ -26,7 +27,7 @@ export const ProfilePage = () => {
   const changePasswordMutation = useMutation({
     mutationFn: authService.changePassword,
     onSuccess: (res) => {
-      if (res.isSuccess) {
+      if (isApiSuccess(res)) {
         message.success('Đổi mật khẩu thành công')
         setIsModalOpen(false)
         form.resetFields()

@@ -6,6 +6,7 @@ import dayjs from 'dayjs'
 import { reviewSlotService, reviewPeriodService } from '@/api/admin.service'
 import { formatDate, formatTime } from '@/utils/format'
 import { PageWrapper } from '@/components/common/PageWrapper'
+import { isApiSuccess } from '@/types/api'
 import type { ReviewSlot } from '@/types/entities'
 
 export const ReviewSlotsPage = () => {
@@ -37,7 +38,7 @@ export const ReviewSlotsPage = () => {
   const createMutation = useMutation({
     mutationFn: reviewSlotService.create,
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (isApiSuccess(res.data)) {
         message.success('Tạo slot thành công')
         setModalOpen(false)
         form.resetFields()
@@ -56,7 +57,7 @@ export const ReviewSlotsPage = () => {
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
       reviewSlotService.update(id, data),
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (isApiSuccess(res.data)) {
         message.success('Cập nhật thành công')
         setModalOpen(false)
         setEditingId(null)
@@ -75,7 +76,7 @@ export const ReviewSlotsPage = () => {
   const deleteMutation = useMutation({
     mutationFn: reviewSlotService.delete,
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (isApiSuccess(res.data)) {
         message.success('Xóa thành công')
       } else {
         message.error(res.data.message || 'Xóa thất bại')
@@ -112,10 +113,10 @@ export const ReviewSlotsPage = () => {
       const payload = {
         reviewPeriodId: values.reviewPeriodId,
         date: values.date.format('YYYY-MM-DD'),
-        startTime: values.startTime.format('HH:mm'),
-        endTime: values.endTime.format('HH:mm'),
+        startTime: values.startTime.format('HH:mm:ss'),
+        endTime: values.endTime.format('HH:mm:ss'),
         room: values.room,
-        maxGroups: values.maxGroups || 5,
+        maxGroups: Number(values.maxGroups) || 5,
       }
       if (editingId) {
         updateMutation.mutate({ id: editingId, data: { ...payload, id: editingId } })

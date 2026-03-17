@@ -1,9 +1,14 @@
 export interface ApiResponse<T> {
   data: T | null
-  isSuccess: boolean
+  isSuccess?: boolean
   statusCode: number
   message: string
   errors?: string[]
+}
+
+export function isApiSuccess<T>(res: ApiResponse<T>): boolean {
+  if (typeof res.isSuccess === 'boolean') return res.isSuccess
+  return res.statusCode >= 1000 && res.statusCode < 2000
 }
 
 export interface PaginatedResponse<T> {

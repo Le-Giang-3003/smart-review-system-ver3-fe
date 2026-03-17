@@ -4,6 +4,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined, TagsOutlined } from '@ant-d
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { topicService, lecturerService } from '@/api/admin.service'
 import { PageWrapper } from '@/components/common/PageWrapper'
+import { isApiSuccess } from '@/types/api'
 import type { Topic } from '@/types/entities'
 
 export const TopicsPage = () => {
@@ -36,7 +37,7 @@ export const TopicsPage = () => {
   const createMutation = useMutation({
     mutationFn: topicService.create,
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (isApiSuccess(res.data)) {
         message.success('Tạo đề tài thành công')
         setModalOpen(false)
         form.resetFields()
@@ -55,7 +56,7 @@ export const TopicsPage = () => {
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
       topicService.update(id, data),
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (isApiSuccess(res.data)) {
         message.success('Cập nhật thành công')
         setModalOpen(false)
         setEditingId(null)
@@ -74,7 +75,7 @@ export const TopicsPage = () => {
   const deleteMutation = useMutation({
     mutationFn: topicService.delete,
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (isApiSuccess(res.data)) {
         message.success('Xóa thành công')
       } else {
         message.error(res.data.message || 'Xóa thất bại')
@@ -91,7 +92,7 @@ export const TopicsPage = () => {
     mutationFn: ({ id, keywords }: { id: number; keywords: string[] }) =>
       topicService.assignTags(id, keywords),
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (isApiSuccess(res.data)) {
         message.success('Gán tags thành công')
         setTagModalOpen(false)
         setSelectedTopicId(null)

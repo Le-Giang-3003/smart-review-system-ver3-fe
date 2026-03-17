@@ -4,6 +4,7 @@ import { MailOutlined, ArrowLeftOutlined } from '@ant-design/icons'
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { authService } from '@/api/auth.service'
+import { isApiSuccess } from '@/types/api'
 import { ROUTES } from '@/constants'
 
 const { Title, Text } = Typography
@@ -16,7 +17,7 @@ export const ForgotPasswordPage = () => {
   const resetMutation = useMutation({
     mutationFn: authService.requestPasswordReset,
     onSuccess: (response) => {
-      if (response.isSuccess) {
+      if (isApiSuccess(response)) {
         setSent(true)
       } else {
         message.error(response.message || 'Gửi yêu cầu thất bại')

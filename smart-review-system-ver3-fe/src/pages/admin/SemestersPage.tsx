@@ -6,6 +6,7 @@ import dayjs from 'dayjs'
 import { semesterService } from '@/api/admin.service'
 import { formatDate } from '@/utils/format'
 import { PageWrapper } from '@/components/common/PageWrapper'
+import { isApiSuccess } from '@/types/api'
 import type { Semester } from '@/types/entities'
 
 export const SemestersPage = () => {
@@ -28,7 +29,7 @@ export const SemestersPage = () => {
   const createMutation = useMutation({
     mutationFn: semesterService.create,
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (isApiSuccess(res.data)) {
         message.success('Tạo học kỳ thành công')
         setModalOpen(false)
         form.resetFields()
@@ -47,7 +48,7 @@ export const SemestersPage = () => {
     mutationFn: ({ id, data }: { id: number; data: { code: string; name: string; startDate: string; endDate: string } }) =>
       semesterService.update(id, data),
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (isApiSuccess(res.data)) {
         message.success('Cập nhật thành công')
         setModalOpen(false)
         setEditingId(null)
@@ -66,7 +67,7 @@ export const SemestersPage = () => {
   const deleteMutation = useMutation({
     mutationFn: semesterService.delete,
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (isApiSuccess(res.data)) {
         message.success('Xóa thành công')
       } else {
         message.error(res.data.message || 'Xóa thất bại')
@@ -82,7 +83,7 @@ export const SemestersPage = () => {
   const activateMutation = useMutation({
     mutationFn: (id: number) => semesterService.activate(id, true),
     onSuccess: (res) => {
-      if (res.data.isSuccess) {
+      if (isApiSuccess(res.data)) {
         message.success('Kích hoạt học kỳ thành công')
       } else {
         message.error(res.data.message || 'Kích hoạt thất bại')

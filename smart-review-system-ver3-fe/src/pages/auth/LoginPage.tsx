@@ -6,6 +6,7 @@ import { MailOutlined, LockOutlined } from '@ant-design/icons'
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { authService } from '@/api/auth.service'
+import { isApiSuccess } from '@/types/api'
 import { useAuthStore } from '@/stores/authStore'
 import { ROUTES } from '@/constants'
 
@@ -37,10 +38,7 @@ export const LoginPage = () => {
     mutationFn: authService.login,
     onSuccess: (response) => {
       const loginData = response.data
-      if (
-        (response.isSuccess || response.statusCode === 1000 || response.statusCode === 200) &&
-        loginData
-      ) {
+      if (isApiSuccess(response) && loginData) {
         setAuth(loginData.accessToken, loginData.refreshToken, loginData.user)
         message.success('Đăng nhập thành công')
 

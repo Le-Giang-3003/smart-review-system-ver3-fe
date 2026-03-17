@@ -4,6 +4,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { tagService } from '@/api/admin.service'
 import { PageWrapper } from '@/components/common/PageWrapper'
+import { isApiSuccess } from '@/types/api'
 import type { Tag } from '@/types/entities'
 
 export const TagsPage = () => {
@@ -26,7 +27,7 @@ export const TagsPage = () => {
   const createMutation = useMutation({
     mutationFn: tagService.create,
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (isApiSuccess(res.data)) {
         message.success('Tạo tag thành công')
         setModalOpen(false)
         form.resetFields()
@@ -45,7 +46,7 @@ export const TagsPage = () => {
     mutationFn: ({ id, data }: { id: number; data: { id: number; name: string; description?: string } }) =>
       tagService.update(id, data),
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (isApiSuccess(res.data)) {
         message.success('Cập nhật thành công')
         setModalOpen(false)
         setEditingId(null)
@@ -64,7 +65,7 @@ export const TagsPage = () => {
   const deleteMutation = useMutation({
     mutationFn: tagService.delete,
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (isApiSuccess(res.data)) {
         message.success('Xóa thành công')
       } else {
         message.error(res.data.message || 'Xóa thất bại')

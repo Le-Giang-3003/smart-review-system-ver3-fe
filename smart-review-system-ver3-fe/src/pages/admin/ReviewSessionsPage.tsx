@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { reviewSessionService, reviewPeriodService } from '@/api/admin.service'
 import { formatDate, formatTime } from '@/utils/format'
 import { PageWrapper } from '@/components/common/PageWrapper'
+import { isApiSuccess } from '@/types/api'
 import type { ReviewSession } from '@/types/entities'
 
 export const ReviewSessionsPage = () => {
@@ -33,7 +34,7 @@ export const ReviewSessionsPage = () => {
   const approveMutation = useMutation({
     mutationFn: reviewSessionService.approve,
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (isApiSuccess(res.data)) {
         message.success('Phê duyệt thành công')
       } else {
         message.error(res.data.message || 'Phê duyệt thất bại')
@@ -50,7 +51,7 @@ export const ReviewSessionsPage = () => {
     mutationFn: ({ id, reason }: { id: number; reason: string }) =>
       reviewSessionService.reject(id, reason),
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (isApiSuccess(res.data)) {
         message.success('Từ chối thành công')
       } else {
         message.error(res.data.message || 'Từ chối thất bại')
@@ -66,7 +67,7 @@ export const ReviewSessionsPage = () => {
   const lockMutation = useMutation({
     mutationFn: reviewSessionService.lock,
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (isApiSuccess(res.data)) {
         message.success('Khóa phiên thành công')
       } else {
         message.error(res.data.message || 'Khóa thất bại')

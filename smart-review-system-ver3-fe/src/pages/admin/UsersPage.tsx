@@ -21,6 +21,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { userService, lecturerService, studentService } from '@/api/admin.service'
 import { authService } from '@/api/auth.service'
+import { isApiSuccess } from '@/types/api'
 import { PageWrapper } from '@/components/common/PageWrapper'
 import { formatDateTime } from '@/utils/format'
 import { ROLE_LABELS, ROLE_COLORS } from '@/constants'
@@ -74,7 +75,7 @@ export const UsersPage = () => {
   const createAccountMutation = useMutation({
     mutationFn: authService.createAccount,
     onSuccess: (res) => {
-      if (res.isSuccess) {
+      if (isApiSuccess(res)) {
         message.success('Tạo tài khoản thành công')
         queryClient.invalidateQueries({ queryKey: ['users'] })
         setCreateModalOpen(false)
@@ -91,7 +92,7 @@ export const UsersPage = () => {
   const lockUnlockMutation = useMutation({
     mutationFn: authService.lockUnlockAccount,
     onSuccess: (res) => {
-      if (res.isSuccess) {
+      if (isApiSuccess(res)) {
         message.success('Cập nhật trạng thái tài khoản thành công')
         queryClient.invalidateQueries({ queryKey: ['users'] })
       } else {

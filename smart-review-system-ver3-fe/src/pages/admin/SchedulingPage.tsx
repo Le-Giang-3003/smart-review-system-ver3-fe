@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { schedulingService, reviewPeriodService } from '@/api/admin.service'
 import { formatDate, formatTime } from '@/utils/format'
 import { PageWrapper } from '@/components/common/PageWrapper'
+import { isApiSuccess } from '@/types/api'
 import type { SchedulingResult } from '@/types/entities'
 
 export const SchedulingPage = () => {
@@ -33,7 +34,7 @@ export const SchedulingPage = () => {
   const runMutation = useMutation({
     mutationFn: (periodId: number) => schedulingService.run(periodId),
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (isApiSuccess(res.data)) {
         message.success('Chạy thuật toán thành công')
       } else {
         message.error(res.data.message || 'Chạy thuật toán thất bại')
