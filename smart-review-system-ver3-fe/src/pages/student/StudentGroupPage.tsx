@@ -25,6 +25,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { studentApiService } from '@/api/student.service'
 import { studentService } from '@/api/admin.service'
+import { isApiSuccess } from '@/types/api'
 import { PageWrapper } from '@/components/common/PageWrapper'
 import { useAuthStore } from '@/stores/authStore'
 import {
@@ -62,18 +63,20 @@ export const StudentGroupPage = () => {
     enabled: inviteModalOpen,
   })
 
-  const myGroup = groups.find(
-    (g: any) => g.members?.some((m: any) => m.studentId === user?.studentId)
-  )
+  const myGroup = groups.length > 0 ? groups[0] : undefined
 
   const createMutation = useMutation({
     mutationFn: studentApiService.createGroup,
-    onSuccess: () => {
-      message.success('Tạo nhóm thành công')
+    onSuccess: (res) => {
+      if (isApiSuccess(res.data)) {
+        message.success('Tạo nhóm thành công')
+        setCreateModalOpen(false)
+        createForm.resetFields()
+      } else {
+        message.error(res.data.message || 'Tạo nhóm thất bại')
+      }
       queryClient.invalidateQueries({ queryKey: ['student-groups'] })
       queryClient.invalidateQueries({ queryKey: ['student-dashboard'] })
-      setCreateModalOpen(false)
-      createForm.resetFields()
     },
     onError: (error: any) => {
       message.error(error.response?.data?.message || 'Tạo nhóm thất bại')
@@ -83,11 +86,15 @@ export const StudentGroupPage = () => {
   const inviteMutation = useMutation({
     mutationFn: ({ groupId, studentId }: { groupId: number; studentId: number }) =>
       studentApiService.inviteStudent(groupId, studentId),
-    onSuccess: () => {
-      message.success('Đã gửi lời mời')
+    onSuccess: (res) => {
+      if (isApiSuccess(res.data)) {
+        message.success('Đã gửi lời mời')
+        setInviteModalOpen(false)
+        inviteForm.resetFields()
+      } else {
+        message.error(res.data.message || 'Mời thất bại')
+      }
       queryClient.invalidateQueries({ queryKey: ['student-groups'] })
-      setInviteModalOpen(false)
-      inviteForm.resetFields()
     },
     onError: (error: any) => {
       message.error(error.response?.data?.message || 'Mời thất bại')
@@ -96,8 +103,12 @@ export const StudentGroupPage = () => {
 
   const readyMutation = useMutation({
     mutationFn: studentApiService.markGroupReady,
-    onSuccess: () => {
-      message.success('Nhóm đã sẵn sàng')
+    onSuccess: (res) => {
+      if (isApiSuccess(res.data)) {
+        message.success('Nhóm đã sẵn sàng')
+      } else {
+        message.error(res.data.message || 'Thao tác thất bại')
+      }
       queryClient.invalidateQueries({ queryKey: ['student-groups'] })
       queryClient.invalidateQueries({ queryKey: ['student-dashboard'] })
     },
