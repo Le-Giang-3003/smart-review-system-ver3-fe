@@ -22,6 +22,7 @@ import {
 } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { studentApiService } from '@/api/student.service'
+import { isApiSuccess } from '@/types/api'
 import { PageWrapper } from '@/components/common/PageWrapper'
 import { GROUP_STATUS_LABELS, GROUP_STATUS_COLORS } from '@/constants'
 import { formatDate, formatTime } from '@/utils/format'
@@ -45,9 +46,14 @@ export const StudentDashboard = () => {
   const respondMutation = useMutation({
     mutationFn: ({ invitationId, accept }: { invitationId: number; accept: boolean }) =>
       studentApiService.respondToInvitation(invitationId, accept),
-    onSuccess: (_, { accept }) => {
-      message.success(accept ? 'Đã chấp nhận lời mời' : 'Đã từ chối lời mời')
+    onSuccess: (res, { accept }) => {
+      if (isApiSuccess(res.data)) {
+        message.success(accept ? 'Đã chấp nhận lời mời' : 'Đã từ chối lời mời')
+      } else {
+        message.error(res.data.message || 'Thao tác thất bại')
+      }
       queryClient.invalidateQueries({ queryKey: ['student-dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['student-groups'] })
     },
     onError: (error: any) => {
       message.error(error.response?.data?.message || 'Thao tác thất bại')
@@ -154,7 +160,7 @@ export const StudentDashboard = () => {
                     loading={respondMutation.isPending}
                     onClick={() =>
                       respondMutation.mutate({
-                        invitationId: invitation.id,
+                        invitationId: invitation.invitationId,
                         accept: true,
                       })
                     }
@@ -169,7 +175,7 @@ export const StudentDashboard = () => {
                     loading={respondMutation.isPending}
                     onClick={() =>
                       respondMutation.mutate({
-                        invitationId: invitation.id,
+                        invitationId: invitation.invitationId,
                         accept: false,
                       })
                     }
