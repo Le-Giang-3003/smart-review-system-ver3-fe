@@ -93,6 +93,8 @@ export const StudentTopicsPage = () => {
 
   const myGroup = groups.length > 0 ? groups[0] : undefined
   const groupHasTopic = myGroup?.topicTitle
+  const isGroupReady = myGroup?.status === 'Ready'
+  const canRegister = !!myGroup && !groupHasTopic && isGroupReady
 
   const columns = [
     {
@@ -140,7 +142,7 @@ export const StudentTopicsPage = () => {
       width: 120,
       render: (_: unknown, record: any) => {
         if (record.groupId || record.groupName) return null
-        if (!myGroup || groupHasTopic) return null
+        if (!canRegister) return null
 
         return (
           <Popconfirm
@@ -191,6 +193,14 @@ export const StudentTopicsPage = () => {
           style={{ marginBottom: 16 }}
         />
       )}
+      {myGroup && !isGroupReady && !groupHasTopic && (
+        <Alert
+          message={`Nhóm "${myGroup.groupName}" đang ở trạng thái "${myGroup.status}". Vui lòng vào trang "Nhóm của tôi" và nhấn nút "Sẵn sàng" trước khi đăng ký đề tài.`}
+          type="warning"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+      )}
       {myGroup && groupHasTopic && (
         <Alert
           message={`Nhóm "${myGroup.groupName}" đã đăng ký đề tài: ${myGroup.topicTitle}`}
@@ -231,6 +241,14 @@ export const StudentTopicsPage = () => {
         {!myGroup && (
           <Alert
             message="Bạn cần tham gia nhóm trước khi đăng ký đề tài"
+            type="warning"
+            showIcon
+            style={{ marginBottom: 16 }}
+          />
+        )}
+        {myGroup && !isGroupReady && !groupHasTopic && (
+          <Alert
+            message="Nhóm phải ở trạng thái Sẵn sàng trước khi đăng ký đề tài"
             type="warning"
             showIcon
             style={{ marginBottom: 16 }}
@@ -296,7 +314,7 @@ export const StudentTopicsPage = () => {
                 type="primary"
                 htmlType="submit"
                 loading={registerMutation.isPending}
-                disabled={!myGroup || !!groupHasTopic}
+                disabled={!canRegister}
               >
                 Đăng ký
               </Button>
