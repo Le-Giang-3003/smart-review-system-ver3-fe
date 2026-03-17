@@ -28,7 +28,7 @@ export const SemestersPage = () => {
   const createMutation = useMutation({
     mutationFn: semesterService.create,
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (res.data.isSuccess) {
         message.success('Tạo học kỳ thành công')
         setModalOpen(false)
         form.resetFields()
@@ -47,7 +47,7 @@ export const SemestersPage = () => {
     mutationFn: ({ id, data }: { id: number; data: { code: string; name: string; startDate: string; endDate: string } }) =>
       semesterService.update(id, data),
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (res.data.isSuccess) {
         message.success('Cập nhật thành công')
         setModalOpen(false)
         setEditingId(null)
@@ -66,7 +66,7 @@ export const SemestersPage = () => {
   const deleteMutation = useMutation({
     mutationFn: semesterService.delete,
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (res.data.isSuccess) {
         message.success('Xóa thành công')
       } else {
         message.error(res.data.message || 'Xóa thất bại')
@@ -82,7 +82,7 @@ export const SemestersPage = () => {
   const activateMutation = useMutation({
     mutationFn: (id: number) => semesterService.activate(id, true),
     onSuccess: (res) => {
-      if (res.data?.isSuccess !== false) {
+      if (res.data.isSuccess) {
         message.success('Kích hoạt học kỳ thành công')
       } else {
         message.error(res.data.message || 'Kích hoạt thất bại')

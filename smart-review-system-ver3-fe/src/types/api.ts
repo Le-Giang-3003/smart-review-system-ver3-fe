@@ -4,7 +4,6 @@ export interface ApiResponse<T> {
   statusCode: number
   message: string
   errors?: string[]
-  timestamp: string
 }
 
 export interface PaginatedResponse<T> {
