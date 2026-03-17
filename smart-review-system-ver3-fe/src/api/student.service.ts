@@ -40,6 +40,9 @@ export const studentApiService = {
     supervisorId: number
   }) => apiClient.post<ApiResponse<null>>('/Topics/register-for-group', data),
 
+  registerExistingTopicForGroup: (topicId: number, groupId: number) =>
+    apiClient.post<ApiResponse<null>>(`/Topics/${topicId}/register-group`, { groupId }),
+
   // Review Slots
   getAvailableSlots: (reviewPeriodId: number) =>
     apiClient.get<ApiResponse<ReviewSlot[]>>('/ReviewSlots', {

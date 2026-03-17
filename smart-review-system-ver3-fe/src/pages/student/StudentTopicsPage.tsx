@@ -11,11 +11,13 @@ import {
   App,
   Space,
   Alert,
+  Popconfirm,
 } from 'antd'
-import { FileAddOutlined, SearchOutlined } from '@ant-design/icons'
+import { FileAddOutlined, SearchOutlined, CheckOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { studentApiService } from '@/api/student.service'
 import { lecturerService } from '@/api/admin.service'
+import { isApiSuccess } from '@/types/api'
 import { PageWrapper } from '@/components/common/PageWrapper'
 
 export const StudentTopicsPage = () => {
@@ -50,22 +52,47 @@ export const StudentTopicsPage = () => {
       const res = await studentApiService.getMyGroup()
       return res.data.data ?? []
     },
-    enabled: registerModalOpen,
   })
 
   const registerMutation = useMutation({
     mutationFn: studentApiService.registerTopicForGroup,
-    onSuccess: () => {
-      message.success('Đăng ký đề tài thành công')
+    onSuccess: (res) => {
+      if (isApiSuccess(res.data)) {
+        message.success('Đăng ký đề tài thành công')
+        setRegisterModalOpen(false)
+        form.resetFields()
+      } else {
+        message.error(res.data.message || 'Đăng ký thất bại')
+      }
       queryClient.invalidateQueries({ queryKey: ['student-topics'] })
       queryClient.invalidateQueries({ queryKey: ['student-dashboard'] })
-      setRegisterModalOpen(false)
-      form.resetFields()
+      queryClient.invalidateQueries({ queryKey: ['student-groups'] })
     },
     onError: (error: any) => {
       message.error(error.response?.data?.message || 'Đăng ký thất bại')
     },
   })
+
+  const registerExistingMutation = useMutation({
+    mutationFn: ({ topicId, groupId }: { topicId: number; groupId: number }) =>
+      studentApiService.registerExistingTopicForGroup(topicId, groupId),
+    onSuccess: (res) => {
+      if (isApiSuccess(res.data)) {
+        message.success('Đăng ký đề tài thành công')
+      } else {
+        message.error(res.data.message || 'Đăng ký thất bại')
+      }
+      queryClient.invalidateQueries({ queryKey: ['student-topics'] })
+      queryClient.invalidateQueries({ queryKey: ['student-dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['student-groups'] })
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Đăng ký thất bại')
+    },
+  })
+
+  const myGroup = groups.length > 0 ? groups[0] : undefined
+  const groupHasTopic = myGroup?.topicTitle
 
   const columns = [
     {
@@ -107,9 +134,40 @@ export const StudentTopicsPage = () => {
       render: (name?: string) =>
         name ? <Tag color="success">{name}</Tag> : <Tag color="default">Trống</Tag>,
     },
-  ]
+    {
+      title: 'Thao tác',
+      key: 'action',
+      width: 120,
+      render: (_: unknown, record: any) => {
+        if (record.groupId || record.groupName) return null
+        if (!myGroup || groupHasTopic) return null
 
-  const myGroup = groups.find((g: any) => g.members?.length > 0)
+        return (
+          <Popconfirm
+            title="Đăng ký đề tài này?"
+            description={`Nhóm "${myGroup.groupName}" sẽ đăng ký đề tài "${record.title}"`}
+            onConfirm={() =>
+              registerExistingMutation.mutate({
+                topicId: record.id,
+                groupId: myGroup.id,
+              })
+            }
+            okText="Đăng ký"
+            cancelText="Hủy"
+          >
+            <Button
+              type="link"
+              size="small"
+              icon={<CheckOutlined />}
+              loading={registerExistingMutation.isPending}
+            >
+              Đăng ký
+            </Button>
+          </Popconfirm>
+        )
+      },
+    },
+  ]
 
   return (
     <PageWrapper
@@ -121,10 +179,27 @@ export const StudentTopicsPage = () => {
           icon={<FileAddOutlined />}
           onClick={() => setRegisterModalOpen(true)}
         >
-          Đăng ký đề tài
+          Đăng ký đề tài mới
         </Button>
       }
     >
+      {!myGroup && (
+        <Alert
+          message="Bạn cần tham gia nhóm trước khi đăng ký đề tài"
+          type="warning"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+      )}
+      {myGroup && groupHasTopic && (
+        <Alert
+          message={`Nhóm "${myGroup.groupName}" đã đăng ký đề tài: ${myGroup.topicTitle}`}
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+      )}
+
       <Card>
         <div style={{ marginBottom: 16 }}>
           <Input
@@ -147,7 +222,7 @@ export const StudentTopicsPage = () => {
       </Card>
 
       <Modal
-        title="Đăng ký đề tài cho nhóm"
+        title="Đăng ký đề tài mới cho nhóm"
         open={registerModalOpen}
         onCancel={() => setRegisterModalOpen(false)}
         footer={null}
@@ -156,6 +231,14 @@ export const StudentTopicsPage = () => {
         {!myGroup && (
           <Alert
             message="Bạn cần tham gia nhóm trước khi đăng ký đề tài"
+            type="warning"
+            showIcon
+            style={{ marginBottom: 16 }}
+          />
+        )}
+        {myGroup && groupHasTopic && (
+          <Alert
+            message={`Nhóm đã đăng ký đề tài: ${myGroup.topicTitle}`}
             type="warning"
             showIcon
             style={{ marginBottom: 16 }}
@@ -174,7 +257,7 @@ export const StudentTopicsPage = () => {
           }}
           style={{ marginTop: 8 }}
         >
-          {myGroup && (
+          {myGroup && !groupHasTopic && (
             <Alert
               message={`Đăng ký cho nhóm: ${myGroup.groupName}`}
               type="info"
@@ -213,7 +296,7 @@ export const StudentTopicsPage = () => {
                 type="primary"
                 htmlType="submit"
                 loading={registerMutation.isPending}
-                disabled={!myGroup}
+                disabled={!myGroup || !!groupHasTopic}
               >
                 Đăng ký
               </Button>
