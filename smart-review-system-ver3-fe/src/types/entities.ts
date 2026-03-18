@@ -22,8 +22,9 @@ export enum ReviewPeriodStatus {
   Draft = 0,
   Open = 1,
   Scheduling = 2,
-  InProgress = 3,
-  Completed = 4,
+  Scheduled = 3,
+  InProgress = 4,
+  Closed = 5,
 }
 
 export interface Semester {
