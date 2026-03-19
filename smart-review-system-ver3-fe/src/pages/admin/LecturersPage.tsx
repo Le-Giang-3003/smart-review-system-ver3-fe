@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { Table, Button, Space, Modal, Form, Select, Input, App, Tabs, Row, Col } from 'antd'
+import { Table, Button, Space, Modal, Form, Select, Input, App, Row, Col } from 'antd'
 import { 
   PlusOutlined, EditOutlined, DeleteOutlined, 
   UploadOutlined, BuildOutlined 
@@ -15,12 +15,10 @@ export const LecturersPage = () => {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   
-  const [compatModalOpen, setCompatModalOpen] = useState(false)
   const [loadModalOpen, setLoadModalOpen] = useState(false)
   const [selectedLecturerId, setSelectedLecturerId] = useState<number | null>(null)
   
   const [form] = Form.useForm()
-  const [compatForm] = Form.useForm()
   const [loadForm] = Form.useForm()
   
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -29,7 +27,6 @@ export const LecturersPage = () => {
   const { modal, message } = App.useApp()
 
   const invalidateLecturers = () => queryClient.invalidateQueries({ queryKey: ['lecturers'] })
-  const invalidateCompat = () => queryClient.invalidateQueries({ queryKey: ['lecturer-compatibilities'] })
 
   const { data: lecturers = [], isLoading } = useQuery({
     queryKey: ['lecturers'],
@@ -37,11 +34,6 @@ export const LecturersPage = () => {
       const res = await lecturerService.getAll()
       return extractListFromApiData<Lecturer>(res.data?.data)
     },
-  })
-
-  useQuery({
-    queryKey: ['lecturer-compatibilities'],
-    queryFn: async () => [],
   })
 
   const createMutation = useMutation({
@@ -115,24 +107,6 @@ export const LecturersPage = () => {
     }
   })
 
-  const createCompatMutation = useMutation({
-    mutationFn: lecturerService.createCompatibility,
-    onSuccess: (res) => {
-      if (isApiSuccess(res.data)) {
-        message.success('Thêm tương thích thành công')
-        setCompatModalOpen(false)
-        compatForm.resetFields()
-      } else {
-        message.error(res.data.message || 'Thêm thất bại')
-      }
-      invalidateCompat()
-    },
-    onError: (error: any) => {
-      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
-      invalidateCompat()
-    },
-  })
-
   const updateLoadMutation = useMutation({
     mutationFn: (data: { lecturerIds: number[]; minTopics: number; maxTopics: number }) =>
       lecturerService.batchUpdateWorkload(data.lecturerIds, data.minTopics, data.maxTopics),
@@ -189,16 +163,6 @@ export const LecturersPage = () => {
       } else {
         createMutation.mutate(payload)
       }
-    })
-  }
-
-  const onCompatSubmit = () => {
-    compatForm.validateFields().then((values) => {
-      createCompatMutation.mutate({
-        lecturerAId: values.lecturerAId,
-        lecturerBId: values.lecturerBId,
-        level: values.compatibilityType,
-      })
     })
   }
 
@@ -278,33 +242,12 @@ export const LecturersPage = () => {
         </Button>
       </Space>
     }>
-      <Tabs
-        items={[
-          {
-            key: 'lecturers',
-            label: 'Danh sách giảng viên',
-            children: (
-              <Table
-                columns={lecturerColumns}
-                dataSource={lecturers}
-                rowKey="id"
-                loading={isLoading}
-                pagination={{ pageSize: 12 }}
-              />
-            ),
-          },
-          {
-            key: 'compatibilities',
-            label: 'Ma trận tương thích',
-            children: (
-              <>
-                <div style={{ padding: '16px 8px', color: '#78716C' }}>
-                  BE hiện tại chưa mở API tương thích giảng viên. Tab này đang được ẩn thao tác để tránh lỗi gọi API.
-                </div>
-              </>
-            ),
-          },
-        ]}
+      <Table
+        columns={lecturerColumns}
+        dataSource={lecturers}
+        rowKey="id"
+        loading={isLoading}
+        pagination={{ pageSize: 12 }}
       />
 
       <Modal
@@ -358,43 +301,6 @@ export const LecturersPage = () => {
               </Form.Item>
             </Col>
           </Row>
-        </Form>
-      </Modal>
-
-      <Modal
-        title="Thêm tương thích giảng viên"
-        open={compatModalOpen}
-        onCancel={() => setCompatModalOpen(false)}
-        onOk={onCompatSubmit}
-        confirmLoading={createCompatMutation.isPending}
-        okText="Thêm"
-      >
-        <Form form={compatForm} layout="vertical">
-          <Form.Item name="lecturerAId" label="Giảng viên A" rules={[{ required: true }]}>
-            <Select
-              placeholder="Chọn GV"
-              showSearch
-              filterOption={(input, option) => (option?.label ?? '').toString().toLowerCase().includes(input.toLowerCase())}
-              options={lecturers.map((l: any) => ({ label: l.fullName, value: l.id }))}
-            />
-          </Form.Item>
-          <Form.Item name="lecturerBId" label="Giảng viên B" rules={[{ required: true }]}>
-            <Select
-              placeholder="Chọn GV"
-              showSearch
-              filterOption={(input, option) => (option?.label ?? '').toString().toLowerCase().includes(input.toLowerCase())}
-              options={lecturers.map((l: any) => ({ label: l.fullName, value: l.id }))}
-            />
-          </Form.Item>
-          <Form.Item name="compatibilityType" label="Loại tương thích" rules={[{ required: true }]}>
-            <Select
-              options={[
-                { label: 'Trung lập', value: 'Normal' },
-                { label: 'Whitelist (Nên cùng hội đồng)', value: 'Preferred' },
-                { label: 'Blacklist (Tránh cùng hội đồng)', value: 'StrongIncompatible' },
-              ]}
-            />
-          </Form.Item>
         </Form>
       </Modal>
 

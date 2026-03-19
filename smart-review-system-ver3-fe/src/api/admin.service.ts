@@ -6,7 +6,6 @@ import type {
   ReviewSlot,
   Topic,
   Lecturer,
-  LecturerCompatibility,
   LecturerSemesterLoad,
   Student,
   Group,
@@ -80,8 +79,10 @@ export const groupService = {
   getById: (id: number) => apiClient.get<ApiResponse<Group>>(`/Groups/${id}`),
   create: (data: Record<string, unknown>) =>
     apiClient.post<ApiResponse<Group>>('/Groups', data),
+  /** @deprecated BE chưa hỗ trợ - xem API_SUPPORT.groups.update */
   update: (id: number, data: Record<string, unknown>) =>
     apiClient.put<ApiResponse<Group>>(`/Groups/${id}`, data),
+  /** @deprecated BE chưa hỗ trợ - xem API_SUPPORT.groups.delete */
   delete: (id: number) => apiClient.delete<ApiResponse<null>>(`/Groups/${id}`),
 }
 
@@ -110,16 +111,6 @@ export const lecturerService = {
     apiClient.get<ApiResponse<LecturerSemesterLoad[]>>('/Lecturers/semester-loads', {
       params: { semesterId, onlyOverloaded },
     }),
-  getCompatibilities: (type?: number) =>
-    apiClient.get<ApiResponse<LecturerCompatibility[]>>('/Lecturers/compatibilities', {
-      params: { type },
-    }),
-  createCompatibility: (data: { lecturerAId: number; lecturerBId: number; level: string }) =>
-    apiClient.put<ApiResponse<LecturerCompatibility>>('/Lecturers/compatibility', data),
-  updateCompatibility: (data: { lecturerAId: number; lecturerBId: number; level: string }) =>
-    apiClient.put<ApiResponse<null>>('/Lecturers/compatibility', data),
-  deleteCompatibility: (id: number) =>
-    apiClient.delete<ApiResponse<null>>(`/Lecturers/compatibilities/${id}`),
   import: (file: File) => {
     const formData = new FormData()
     formData.append('file', file)
