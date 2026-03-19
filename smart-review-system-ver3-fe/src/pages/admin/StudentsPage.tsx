@@ -6,6 +6,7 @@ import { studentService } from '@/api/admin.service'
 import { PageWrapper } from '@/components/common/PageWrapper'
 import { isApiSuccess } from '@/types/api'
 import type { Student } from '@/types/entities'
+import { extractListFromApiData } from '@/utils/api'
 
 export const StudentsPage = () => {
   const [modalOpen, setModalOpen] = useState(false)
@@ -23,7 +24,7 @@ export const StudentsPage = () => {
     queryKey: ['students'],
     queryFn: async () => {
       const res = await studentService.getAll()
-      return res.data?.data?.items || res.data?.data || []
+      return extractListFromApiData<Student>(res.data?.data)
     },
   })
 

@@ -25,6 +25,7 @@ import { isApiSuccess } from '@/types/api'
 import { PageWrapper } from '@/components/common/PageWrapper'
 import { formatDateTime } from '@/utils/format'
 import { ROLE_LABELS, ROLE_COLORS } from '@/constants'
+import { extractListFromApiData } from '@/utils/api'
 
 export const UsersPage = () => {
   const [createModalOpen, setCreateModalOpen] = useState(false)
@@ -44,9 +45,7 @@ export const UsersPage = () => {
         page: 1,
         pageSize: 100,
       })
-      const data = res.data.data
-      if (Array.isArray(data)) return data
-      return data?.items ?? []
+      return extractListFromApiData(res.data.data)
     },
   })
 
@@ -54,9 +53,7 @@ export const UsersPage = () => {
     queryKey: ['lecturers-for-account'],
     queryFn: async () => {
       const res = await lecturerService.getAll('', '', 1, 500)
-      const data = res.data.data
-      if (Array.isArray(data)) return data
-      return data?.items ?? []
+      return extractListFromApiData(res.data.data)
     },
     enabled: createModalOpen && selectedRole === 'Lecturer',
   })
@@ -65,9 +62,7 @@ export const UsersPage = () => {
     queryKey: ['students-for-account'],
     queryFn: async () => {
       const res = await studentService.getAll('', 1, 500)
-      const data = res.data.data
-      if (Array.isArray(data)) return data
-      return data?.items ?? []
+      return extractListFromApiData(res.data.data)
     },
     enabled: createModalOpen && selectedRole === 'Student',
   })

@@ -6,6 +6,7 @@ import { topicService, lecturerService } from '@/api/admin.service'
 import { PageWrapper } from '@/components/common/PageWrapper'
 import { isApiSuccess } from '@/types/api'
 import type { Topic } from '@/types/entities'
+import { extractListFromApiData } from '@/utils/api'
 
 export const TopicsPage = () => {
   const [modalOpen, setModalOpen] = useState(false)
@@ -21,8 +22,7 @@ export const TopicsPage = () => {
     queryKey: ['topics'],
     queryFn: async () => {
       const res = await topicService.getAll()
-      const data = res.data?.data as any
-      return data?.items || data || []
+      return extractListFromApiData<Topic>(res.data?.data)
     },
   })
 
@@ -30,7 +30,7 @@ export const TopicsPage = () => {
     queryKey: ['lecturers'],
     queryFn: async () => {
       const res = await lecturerService.getAll()
-      return res.data?.data?.items || res.data?.data || []
+      return extractListFromApiData(res.data?.data)
     },
   })
 

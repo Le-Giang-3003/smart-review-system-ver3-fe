@@ -19,6 +19,7 @@ import { studentApiService } from '@/api/student.service'
 import { lecturerService } from '@/api/admin.service'
 import { isApiSuccess } from '@/types/api'
 import { PageWrapper } from '@/components/common/PageWrapper'
+import { extractListFromApiData } from '@/utils/api'
 
 export const StudentTopicsPage = () => {
   const [search, setSearch] = useState('')
@@ -39,9 +40,7 @@ export const StudentTopicsPage = () => {
     queryKey: ['lecturers-for-topic'],
     queryFn: async () => {
       const res = await lecturerService.getAll('', '', 1, 500)
-      const data = res.data.data
-      if (Array.isArray(data)) return data
-      return data?.items ?? []
+      return extractListFromApiData(res.data.data)
     },
     enabled: registerModalOpen,
   })

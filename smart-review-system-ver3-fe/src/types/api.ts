@@ -14,7 +14,7 @@ export function isApiSuccess<T>(res: ApiResponse<T>): boolean {
 export interface PaginatedResponse<T> {
   items: T[]
   totalCount: number
-  page: number
+  pageNumber: number
   pageSize: number
   totalPages: number
 }

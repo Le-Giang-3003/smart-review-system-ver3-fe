@@ -6,6 +6,7 @@ import { groupService } from '@/api/admin.service'
 import { GROUP_STATUS_LABELS } from '@/constants'
 import { PageWrapper } from '@/components/common/PageWrapper'
 import type { Group } from '@/types/entities'
+import { extractListFromApiData } from '@/utils/api'
 
 export const GroupsPage = () => {
   const [searchText, setSearchText] = useState('')
@@ -14,8 +15,7 @@ export const GroupsPage = () => {
     queryKey: ['groups'],
     queryFn: async () => {
       const res = await groupService.getAll()
-      const data = res.data?.data as any
-      return data?.items || data || [] // Support paginated or array
+      return extractListFromApiData<Group>(res.data?.data)
     },
   })
 

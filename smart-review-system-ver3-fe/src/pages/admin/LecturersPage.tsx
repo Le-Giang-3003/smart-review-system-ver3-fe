@@ -2,14 +2,14 @@ import { useState, useRef } from 'react'
 import { Table, Button, Space, Modal, Form, Select, Input, App, Tabs, Row, Col } from 'antd'
 import { 
   PlusOutlined, EditOutlined, DeleteOutlined, 
-  LinkOutlined, UploadOutlined, BuildOutlined 
+  UploadOutlined, BuildOutlined 
 } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { lecturerService } from '@/api/admin.service'
-import { COMPATIBILITY_TYPE_LABELS } from '@/constants'
 import { PageWrapper } from '@/components/common/PageWrapper'
-import type { Lecturer, LecturerCompatibility } from '@/types/entities'
+import type { Lecturer } from '@/types/entities'
 import { isApiSuccess } from '@/types/api'
+import { extractListFromApiData } from '@/utils/api'
 
 export const LecturersPage = () => {
   const [modalOpen, setModalOpen] = useState(false)
@@ -35,16 +35,13 @@ export const LecturersPage = () => {
     queryKey: ['lecturers'],
     queryFn: async () => {
       const res = await lecturerService.getAll()
-      return res.data?.data?.items || res.data?.data || []
+      return extractListFromApiData<Lecturer>(res.data?.data)
     },
   })
 
-  const { data: compatibilities = [], isLoading: compatLoading } = useQuery({
+  useQuery({
     queryKey: ['lecturer-compatibilities'],
-    queryFn: async () => {
-      const res = await lecturerService.getCompatibilities()
-      return res.data.data ?? []
-    },
+    queryFn: async () => [],
   })
 
   const createMutation = useMutation({
@@ -127,22 +124,6 @@ export const LecturersPage = () => {
         compatForm.resetFields()
       } else {
         message.error(res.data.message || 'Thêm thất bại')
-      }
-      invalidateCompat()
-    },
-    onError: (error: any) => {
-      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
-      invalidateCompat()
-    },
-  })
-
-  const deleteCompatMutation = useMutation({
-    mutationFn: lecturerService.deleteCompatibility,
-    onSuccess: (res) => {
-      if (isApiSuccess(res.data)) {
-        message.success('Xóa tương thích thành công')
-      } else {
-        message.error(res.data.message || 'Xóa thất bại')
       }
       invalidateCompat()
     },
@@ -275,34 +256,6 @@ export const LecturersPage = () => {
     },
   ]
 
-  const compatColumns = [
-    { title: 'Giảng viên A', dataIndex: 'lecturerAName' },
-    { title: 'Giảng viên B', dataIndex: 'lecturerBName' },
-    {
-      title: 'Loại',
-      dataIndex: 'level',
-      render: (t: string) => COMPATIBILITY_TYPE_LABELS[t] ?? t,
-    },
-    {
-      title: 'Thao tác',
-      key: 'actions',
-      render: (_: unknown, record: LecturerCompatibility) => (
-        <Button
-          danger
-          size="small"
-          onClick={() => {
-            modal.confirm({
-              title: 'Xóa tương thích?',
-              onOk: () => deleteCompatMutation.mutate(record.id),
-            })
-          }}
-        >
-          Xóa
-        </Button>
-      ),
-    },
-  ]
-
   return (
     <PageWrapper title="Quản lý giảng viên" extra={
       <Space>
@@ -345,25 +298,9 @@ export const LecturersPage = () => {
             label: 'Ma trận tương thích',
             children: (
               <>
-                <div style={{ marginBottom: 16 }}>
-                  <Button
-                    type="primary"
-                    icon={<LinkOutlined />}
-                    onClick={() => {
-                      compatForm.resetFields()
-                      setCompatModalOpen(true)
-                    }}
-                  >
-                    Thêm tương thích
-                  </Button>
+                <div style={{ padding: '16px 8px', color: '#78716C' }}>
+                  BE hiện tại chưa mở API tương thích giảng viên. Tab này đang được ẩn thao tác để tránh lỗi gọi API.
                 </div>
-                <Table
-                  columns={compatColumns}
-                  dataSource={compatibilities}
-                  rowKey="id"
-                  loading={compatLoading}
-                  pagination={{ pageSize: 10 }}
-                />
               </>
             ),
           },

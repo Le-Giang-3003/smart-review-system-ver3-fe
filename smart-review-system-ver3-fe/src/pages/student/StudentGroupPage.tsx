@@ -28,6 +28,7 @@ import { studentService } from '@/api/admin.service'
 import { isApiSuccess } from '@/types/api'
 import { PageWrapper } from '@/components/common/PageWrapper'
 import { useAuthStore } from '@/stores/authStore'
+import { extractListFromApiData } from '@/utils/api'
 import {
   GROUP_STATUS_LABELS,
   GROUP_STATUS_COLORS,
@@ -56,9 +57,7 @@ export const StudentGroupPage = () => {
     queryKey: ['all-students-for-invite'],
     queryFn: async () => {
       const res = await studentService.getAll('', 1, 500)
-      const data = res.data.data
-      if (Array.isArray(data)) return data
-      return data?.items ?? []
+      return extractListFromApiData(res.data.data)
     },
     enabled: inviteModalOpen,
   })
