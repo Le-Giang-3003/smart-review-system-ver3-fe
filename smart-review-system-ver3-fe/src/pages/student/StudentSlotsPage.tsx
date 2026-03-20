@@ -51,9 +51,9 @@ export const StudentSlotsPage = () => {
 
   const registerMutation = useMutation({
     mutationFn: studentApiService.registerForSlot,
-    onSuccess: () => {
+    onSuccess: async () => {
       message.success('Đăng ký slot thành công')
-      queryClient.invalidateQueries({ queryKey: ['student-available-slots'] })
+      await queryClient.refetchQueries({ queryKey: ['student-available-slots'] })
       queryClient.invalidateQueries({ queryKey: ['student-dashboard'] })
     },
     onError: (error: any) => {
@@ -63,9 +63,9 @@ export const StudentSlotsPage = () => {
 
   const unregisterMutation = useMutation({
     mutationFn: studentApiService.unregisterFromSlot,
-    onSuccess: () => {
+    onSuccess: async () => {
       message.success('Hủy đăng ký thành công')
-      queryClient.invalidateQueries({ queryKey: ['student-available-slots'] })
+      await queryClient.refetchQueries({ queryKey: ['student-available-slots'] })
       queryClient.invalidateQueries({ queryKey: ['student-dashboard'] })
     },
     onError: (error: any) => {

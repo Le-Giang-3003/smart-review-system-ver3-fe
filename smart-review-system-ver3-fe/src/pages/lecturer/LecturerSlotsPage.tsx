@@ -37,9 +37,9 @@ export const LecturerSlotsPage = () => {
 
   const registerMutation = useMutation({
     mutationFn: lecturerApiService.registerForSlot,
-    onSuccess: () => {
+    onSuccess: async () => {
       message.success('Đăng ký slot thành công')
-      queryClient.invalidateQueries({ queryKey: ['lecturer-available-slots'] })
+      await queryClient.refetchQueries({ queryKey: ['lecturer-available-slots'] })
       queryClient.invalidateQueries({ queryKey: ['lecturer-dashboard'] })
     },
     onError: (error: any) => {
@@ -49,9 +49,9 @@ export const LecturerSlotsPage = () => {
 
   const unregisterMutation = useMutation({
     mutationFn: lecturerApiService.unregisterFromSlot,
-    onSuccess: () => {
+    onSuccess: async () => {
       message.success('Hủy đăng ký thành công')
-      queryClient.invalidateQueries({ queryKey: ['lecturer-available-slots'] })
+      await queryClient.refetchQueries({ queryKey: ['lecturer-available-slots'] })
       queryClient.invalidateQueries({ queryKey: ['lecturer-dashboard'] })
     },
     onError: (error: any) => {
