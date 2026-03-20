@@ -128,6 +128,7 @@ export interface ReviewPeriod {
   name: string
   semesterId: number
   semesterCode?: string
+  semesterName?: string
   round: number
   status: ReviewPeriodStatus | number | string
   startDate: string
@@ -147,6 +148,7 @@ export interface ReviewSlot {
   maxGroups: number
   registeredLecturers?: number
   registeredGroups?: number
+  isCurrentUserRegistered?: boolean
   lecturerRegistrations?: LecturerSlotRegistration[]
   groupRegistrations?: GroupSlotRegistration[]
   createdAt: string

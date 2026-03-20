@@ -10,14 +10,12 @@ import { lecturerApiService } from '@/api/lecturer.service'
 import { reviewPeriodService } from '@/api/admin.service'
 import { PageWrapper } from '@/components/common/PageWrapper'
 import { formatDate, formatTime } from '@/utils/format'
-import { useAuthStore } from '@/stores/authStore'
 import type { ReviewSlot } from '@/types/entities'
 
 export const LecturerSlotsPage = () => {
   const [selectedPeriodId, setSelectedPeriodId] = useState<number | undefined>()
   const queryClient = useQueryClient()
   const { message } = App.useApp()
-  const user = useAuthStore((s) => s.user)
 
   const { data: periods = [] } = useQuery({
     queryKey: ['review-periods-lecturer'],
@@ -62,9 +60,7 @@ export const LecturerSlotsPage = () => {
   })
 
   const isRegistered = (slot: ReviewSlot) => {
-    return slot.lecturerRegistrations?.some(
-      (r) => r.lecturerId === user?.lecturerId
-    )
+    return slot.isCurrentUserRegistered === true
   }
 
   const columns = [
