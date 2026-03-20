@@ -12,7 +12,6 @@ import { SemestersPage } from '@/pages/admin/SemestersPage'
 import { ReviewPeriodsPage } from '@/pages/admin/ReviewPeriodsPage'
 import { ReviewSlotsPage } from '@/pages/admin/ReviewSlotsPage'
 import { TopicsPage } from '@/pages/admin/TopicsPage'
-import { TagsPage } from '@/pages/admin/TagsPage'
 import { LecturersPage } from '@/pages/admin/LecturersPage'
 import { StudentsPage } from '@/pages/admin/StudentsPage'
 import { GroupsPage } from '@/pages/admin/GroupsPage'
@@ -42,7 +41,6 @@ import {
   UserOutlined,
   ScheduleOutlined,
   BookOutlined,
-  TagsOutlined,
   AuditOutlined,
 } from '@ant-design/icons'
 
@@ -85,12 +83,6 @@ const getAdminMenuItems = (navigate: (path: string) => void): MenuProps['items']
     icon: <FileTextOutlined />,
     label: 'Đề tài',
     onClick: () => navigate('/admin/topics'),
-  },
-  {
-    key: '/admin/tags',
-    icon: <TagsOutlined />,
-    label: 'Tags',
-    onClick: () => navigate('/admin/tags'),
   },
   {
     key: '/admin/lecturers',
@@ -221,7 +213,6 @@ function App() {
                 <Route path="review-periods" element={<ReviewPeriodsPage />} />
                 <Route path="review-slots" element={<ReviewSlotsPage />} />
                 <Route path="topics" element={<TopicsPage />} />
-                <Route path="tags" element={<TagsPage />} />
                 <Route path="lecturers" element={<LecturersPage />} />
                 <Route path="students" element={<StudentsPage />} />
                 <Route path="groups" element={<GroupsPage />} />
