@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Table, Button, Space, Select, App } from 'antd'
+import { Table, Button, Space, Select, App, Alert } from 'antd'
 import { CheckOutlined, CloseOutlined, LockOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { reviewSessionService, reviewPeriodService } from '@/api/admin.service'
@@ -155,11 +155,21 @@ export const ReviewSessionsPage = () => {
           placeholder="Lọc theo đợt review"
           allowClear
           style={{ width: 250 }}
+          value={periodFilter}
           onChange={setPeriodFilter}
           options={periods.map((p) => ({ label: p.name, value: p.id }))}
         />
       }
     >
+      {periodFilter && sessions.length === 0 && !isLoading && (
+        <Alert
+          message="Chưa có phiên review"
+          description="Phiên review được tạo khi chạy Lên lịch. Vào trang Lên lịch, chọn đợt review và nhấn 'Chạy lên lịch' để tạo phiên review."
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+      )}
       <Table
         columns={columns}
         dataSource={sessions}
