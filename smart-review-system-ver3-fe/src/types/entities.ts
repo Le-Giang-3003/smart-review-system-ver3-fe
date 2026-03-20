@@ -149,6 +149,7 @@ export interface ReviewSlot {
   registeredLecturers?: number
   registeredGroups?: number
   isCurrentUserRegistered?: boolean
+  isCurrentUserGroupRegistered?: boolean
   lecturerRegistrations?: LecturerSlotRegistration[]
   groupRegistrations?: GroupSlotRegistration[]
   createdAt: string

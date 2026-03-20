@@ -74,9 +74,7 @@ export const StudentSlotsPage = () => {
   })
 
   const isRegistered = (slot: ReviewSlot) => {
-    return slot.groupRegistrations?.some(
-      (r) => myGroup && r.groupId === myGroup.id
-    )
+    return slot.isCurrentUserGroupRegistered === true
   }
 
   const columns = [
