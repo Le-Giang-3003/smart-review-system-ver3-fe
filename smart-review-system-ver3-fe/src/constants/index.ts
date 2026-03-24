@@ -19,26 +19,55 @@ export const SEMESTER_STATUS_LABELS: Record<number, string> = {
   2: 'Đã hoàn thành',
 }
 
+/** ReviewPeriodStatus: Draft(0), Open(1), Scheduling(2), Scheduled(3), InProgress(4), Closed(5) */
 export const PERIOD_STATUS_LABELS: Record<number, string> = {
   0: 'Nháp',
   1: 'Mở đăng ký',
   2: 'Đang lên lịch',
-  3: 'Đang tiến hành',
-  4: 'Đã hoàn thành',
+  3: 'Đã xếp lịch',
+  4: 'Đang diễn ra',
+  5: 'Đã đóng',
 }
 
 export const PERIOD_STATUS_COLORS: Record<number, string> = {
   0: 'default',
   1: 'processing',
   2: 'warning',
-  3: 'success',
-  4: 'default',
+  3: 'cyan',
+  4: 'success',
+  5: 'default',
+}
+
+/** BE trả status dạng string trên một số endpoint */
+export const PERIOD_STATUS_STRING_LABELS: Record<string, string> = {
+  Draft: 'Nháp',
+  Open: 'Mở đăng ký',
+  Scheduling: 'Đang lên lịch',
+  Scheduled: 'Đã xếp lịch',
+  InProgress: 'Đang diễn ra',
+  Closed: 'Đã đóng',
+}
+
+export const PERIOD_STATUS_STRING_COLORS: Record<string, string> = {
+  Draft: 'default',
+  Open: 'processing',
+  Scheduling: 'warning',
+  Scheduled: 'cyan',
+  InProgress: 'success',
+  Closed: 'default',
 }
 
 export const REVIEW_ROUND_LABELS: Record<number, string> = {
   1: 'Vòng 1',
   2: 'Vòng 2',
   3: 'Vòng 3',
+}
+
+/** BE có thể trả round dạng "Round1" | 1 */
+export const REVIEW_ROUND_STRING_LABELS: Record<string, string> = {
+  Round1: 'Vòng 1',
+  Round2: 'Vòng 2',
+  Round3: 'Vòng 3',
 }
 
 export const GROUP_STATUS_LABELS: Record<string, string> = {
@@ -85,4 +114,17 @@ export const ROLE_COLORS: Record<string, string> = {
   Admin: 'volcano',
   Lecturer: 'blue',
   Student: 'green',
+}
+
+/** Role enum từ BE (UserListDto) */
+export const ROLE_VALUE_LABELS: Record<number, string> = {
+  0: 'Quản trị viên',
+  1: 'Giảng viên',
+  2: 'Sinh viên',
+}
+
+export const ROLE_VALUE_COLORS: Record<number, string> = {
+  0: 'volcano',
+  1: 'blue',
+  2: 'green',
 }

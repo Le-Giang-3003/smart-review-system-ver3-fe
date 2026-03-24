@@ -26,10 +26,26 @@ import { isApiSuccess } from '@/types/api'
 import { PageWrapper } from '@/components/common/PageWrapper'
 import { GROUP_STATUS_LABELS, GROUP_STATUS_COLORS } from '@/constants'
 import { formatDate, formatTime } from '@/utils/format'
+import { useAuth } from '@/hooks/useAuth'
+import type { Group, Topic } from '@/types/entities'
+
+function isFullGroupShape(g: unknown): g is Group {
+  return (
+    !!g &&
+    typeof g === 'object' &&
+    'members' in (g as Group) &&
+    Array.isArray((g as Group).members)
+  )
+}
+
+function isFullTopicShape(t: unknown): t is Topic {
+  return !!t && typeof t === 'object' && 'keywords' in (t as Topic)
+}
 
 export const StudentDashboard = () => {
   const queryClient = useQueryClient()
   const { message } = App.useApp()
+  const { user } = useAuth()
 
   const {
     data: dashboard,
@@ -87,14 +103,22 @@ export const StudentDashboard = () => {
     studentInfo,
     group,
     topic,
+    reviewSchedule,
     upcomingReviews = [],
     pendingInvitations = [],
   } = dashboard
 
+  const displayName =
+    studentInfo?.fullName ?? user?.fullName ?? user?.email ?? undefined
+  const upcomingSlotCount =
+    reviewSchedule?.date != null && reviewSchedule.date !== ''
+      ? 1
+      : upcomingReviews.length
+
   return (
     <PageWrapper
       title="Trang sinh viên"
-      subtitle={studentInfo ? `Xin chào, ${studentInfo.fullName}` : undefined}
+      subtitle={displayName ? `Xin chào, ${displayName}` : undefined}
     >
       <Row gutter={[20, 20]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} lg={6}>
@@ -121,7 +145,7 @@ export const StudentDashboard = () => {
           <Card className="stat-card" style={{ borderTop: '3px solid #22C55E' }}>
             <Statistic
               title="Phiên review sắp tới"
-              value={upcomingReviews.length}
+              value={upcomingSlotCount}
               prefix={<CalendarOutlined style={{ color: '#22C55E' }} />}
             />
           </Card>
@@ -211,21 +235,35 @@ export const StudentDashboard = () => {
                 <div style={{ marginBottom: 12 }}>
                   <strong>Thành viên:</strong>
                 </div>
-                <List
-                  size="small"
-                  dataSource={group.members || []}
-                  renderItem={(member: any) => (
-                    <List.Item>
-                      <Space>
-                        {member.fullName}
-                        <Tag>{member.studentCode}</Tag>
-                        {member.studentId === group.leaderId && (
-                          <Tag color="orange">Nhóm trưởng</Tag>
-                        )}
-                      </Space>
-                    </List.Item>
-                  )}
-                />
+                {isFullGroupShape(group) ? (
+                  <List
+                    size="small"
+                    dataSource={group.members || []}
+                    renderItem={(member: any) => (
+                      <List.Item>
+                        <Space>
+                          {member.fullName}
+                          <Tag>{member.studentCode}</Tag>
+                          {member.studentId === group.leaderId && (
+                            <Tag color="orange">Nhóm trưởng</Tag>
+                          )}
+                        </Space>
+                      </List.Item>
+                    )}
+                  />
+                ) : (
+                  <List
+                    size="small"
+                    dataSource={
+                      'memberNames' in group && Array.isArray((group as { memberNames: string[] }).memberNames)
+                        ? (group as { memberNames: string[] }).memberNames
+                        : []
+                    }
+                    renderItem={(name: string) => (
+                      <List.Item>{name}</List.Item>
+                    )}
+                  />
+                )}
               </div>
             ) : (
               <Empty description="Bạn chưa tham gia nhóm nào" />
@@ -239,7 +277,7 @@ export const StudentDashboard = () => {
                 <div style={{ marginBottom: 12 }}>
                   <strong>Tên đề tài:</strong> {topic.title}
                 </div>
-                {topic.description && (
+                {isFullTopicShape(topic) && topic.description && (
                   <div style={{ marginBottom: 12 }}>
                     <strong>Mô tả:</strong> {topic.description}
                   </div>
@@ -247,7 +285,7 @@ export const StudentDashboard = () => {
                 <div style={{ marginBottom: 12 }}>
                   <strong>GVHD:</strong> {topic.supervisorName || 'N/A'}
                 </div>
-                {topic.keywords && topic.keywords.length > 0 && (
+                {isFullTopicShape(topic) && topic.keywords && topic.keywords.length > 0 && (
                   <div>
                     <strong>Từ khóa:</strong>{' '}
                     <Space wrap style={{ marginTop: 4 }}>
@@ -267,7 +305,30 @@ export const StudentDashboard = () => {
         </Col>
       </Row>
 
-      {upcomingReviews.length > 0 && (
+      {reviewSchedule &&
+        reviewSchedule.date != null &&
+        reviewSchedule.date !== '' && (
+          <Card title="Lịch review đã xếp" style={{ marginTop: 20 }}>
+            <List.Item>
+              <List.Item.Meta
+                avatar={<CalendarOutlined style={{ fontSize: 20, color: '#F97316' }} />}
+                title={`${formatDate(reviewSchedule.date)} | ${formatTime(reviewSchedule.startTime)} - ${formatTime(reviewSchedule.endTime)}`}
+                description={
+                  <div>
+                    <div>{reviewSchedule.room ? `Phòng: ${reviewSchedule.room}` : 'Phòng: Chưa xếp'}</div>
+                    {reviewSchedule.councilMembers?.length > 0 && (
+                      <div style={{ marginTop: 8 }}>
+                        <strong>Hội đồng:</strong> {reviewSchedule.councilMembers.join(', ')}
+                      </div>
+                    )}
+                  </div>
+                }
+              />
+            </List.Item>
+          </Card>
+        )}
+
+      {(!reviewSchedule || !reviewSchedule.date) && upcomingReviews.length > 0 && (
         <Card title="Lịch review sắp tới" style={{ marginTop: 20 }}>
           <List
             dataSource={upcomingReviews}

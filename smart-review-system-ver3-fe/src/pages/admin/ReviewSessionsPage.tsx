@@ -97,8 +97,9 @@ export const ReviewSessionsPage = () => {
     {
       title: 'Hội đồng',
       dataIndex: 'councilMembers',
-      render: (members: { lecturerName: string }[] | undefined) =>
-        members?.map((m) => m.lecturerName).join(', ') || '-',
+      render: (members: Array<{ fullName?: string; lecturerName?: string }> | undefined) =>
+        members?.map((m) => m.fullName ?? m.lecturerName ?? '').filter(Boolean).join(', ') ||
+        '-',
     },
     {
       title: 'Trạng thái ĐK',

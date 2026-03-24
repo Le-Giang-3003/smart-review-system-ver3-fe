@@ -4,7 +4,12 @@ import { PlusOutlined, EditOutlined, DeleteOutlined, PlayCircleOutlined, StopOut
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { reviewPeriodService, semesterService } from '@/api/admin.service'
-import { formatDate } from '@/utils/format'
+import {
+  formatDate,
+  formatReviewPeriodStatus,
+  formatReviewRound,
+  normalizeReviewPeriodStatusKey,
+} from '@/utils/format'
 import { PageWrapper } from '@/components/common/PageWrapper'
 import { isApiSuccess } from '@/types/api'
 import type { ReviewPeriod } from '@/types/entities'
@@ -111,11 +116,22 @@ export const ReviewPeriodsPage = () => {
     setModalOpen(true)
   }
 
+  const roundToFormValue = (r: string | number): number => {
+    if (typeof r === 'number' && !Number.isNaN(r)) return r
+    if (typeof r === 'string') {
+      const m = /^Round(\d+)$/i.exec(r.trim())
+      if (m) return Number(m[1])
+      const n = Number(r)
+      if (!Number.isNaN(n)) return n
+    }
+    return 1
+  }
+
   const openEdit = (record: ReviewPeriod) => {
     form.setFieldsValue({
       semesterId: record.semesterId,
       name: record.name,
-      round: record.round,
+      round: roundToFormValue(record.round),
       startDate: dayjs(record.startDate),
       endDate: dayjs(record.endDate),
     })
@@ -147,7 +163,7 @@ export const ReviewPeriodsPage = () => {
     {
       title: 'Vòng',
       dataIndex: 'round',
-      render: (r: string | number) => typeof r === 'number' ? `Vòng ${r}` : r,
+      render: (r: string | number) => formatReviewRound(r),
     },
     {
       title: 'Bắt đầu',
@@ -162,14 +178,14 @@ export const ReviewPeriodsPage = () => {
     {
       title: 'Trạng thái',
       dataIndex: 'status',
-      render: (s: string) => s,
+      render: (s: string | number) => formatReviewPeriodStatus(s),
     },
     {
       title: 'Thao tác',
       key: 'actions',
       width: 200,
       render: (_: unknown, record: ReviewPeriod) => {
-        const s = String(record.status)
+        const s = normalizeReviewPeriodStatusKey(record.status)
         return (
           <Space>
             <Button icon={<EditOutlined />} onClick={() => openEdit(record)} size="small" />

@@ -129,7 +129,8 @@ export interface ReviewPeriod {
   semesterId: number
   semesterCode?: string
   semesterName?: string
-  round: number
+  /** BE có thể trả số (POST) hoặc chuỗi như "Round1" (GET) */
+  round: number | string
   status: ReviewPeriodStatus | number | string
   startDate: string
   endDate: string
@@ -178,6 +179,8 @@ export interface CouncilMemberDetail {
   lecturerCode: string
   isChairman: boolean
   expertises?: string[]
+  /** Một số endpoint cũ có thể dùng tên này */
+  lecturerName?: string
 }
 
 export interface CouncilGroupDetail {
@@ -199,11 +202,16 @@ export interface CouncilDetail {
   groups: CouncilGroupDetail[]
 }
 
+export interface SchedulingAssignment extends CouncilDetail {
+  /** Điểm thuật toán theo tài liệu BE */
+  score?: number
+}
+
 export interface SchedulingResult {
   totalSlots: number
   scheduledSlots: number
   unschedulableSlots: number
-  assignments: CouncilDetail[]
+  assignments: SchedulingAssignment[]
   unschedulableReasons: string[]
 }
 
@@ -212,21 +220,57 @@ export interface ScheduleResult extends SchedulingResult {}
 export interface UserListItem {
   id: number
   email: string
-  role: string
+  /** BE UserListDto: 0 Admin, 1 Lecturer, 2 Student — có thể là chuỗi trên bản cũ */
+  role: number | string
+  linkedName?: string | null
+  linkedCode?: string | null
   isLocked: boolean
-  lastLoginAt?: string
+  forceChangePassword?: boolean
+  lastLoginAt?: string | null
+  createdAt: string
   lecturerId?: number
   lecturerName?: string
   studentId?: number
   studentName?: string
-  createdAt: string
 }
 
-export interface UserDetail extends UserListItem {
+export interface UserDetail {
+  id: number
+  email: string
+  role: number | string
+  lecturerId?: number | null
+  lecturerFullName?: string | null
+  lecturerCode?: string | null
+  department?: string | null
+  lecturerPhone?: string | null
+  studentId?: number | null
+  studentFullName?: string | null
+  studentCode?: string | null
+  groupId?: number | null
+  groupName?: string | null
+  isLocked: boolean
   failedLoginCount: number
-  lockoutEnd?: string
+  lockoutEnd?: string | null
   forceChangePassword: boolean
-  updatedAt?: string
+  lastLoginAt?: string | null
+  createdAt: string
+  updatedAt?: string | null
+}
+
+export interface AdminDashboardWorkloadDistribution {
+  lecturersAtMin: number
+  lecturersBetween: number
+  lecturersNearMax: number
+  lecturersOverMax: number
+}
+
+/** Tóm tắt đợt review trên dashboard admin (BE) */
+export interface AdminDashboardReviewPeriod {
+  id: number
+  name: string
+  round: string | number
+  status: string | number
+  slotCount: number
 }
 
 export interface AdminDashboardDto {
@@ -234,26 +278,56 @@ export interface AdminDashboardDto {
   totalStudents: number
   totalGroups: number
   totalTopics: number
-  activeSemester?: Semester
-  reviewPeriods: ReviewPeriod[]
+  activeSemester?: Pick<Semester, 'id' | 'code' | 'name' | 'isActive'>
+  reviewPeriods: AdminDashboardReviewPeriod[]
+  workloadDistribution?: AdminDashboardWorkloadDistribution
+  slotFillRate?: number
 }
 
 export interface LecturerDashboardDto {
   lecturerInfo: Lecturer
-  upcomingSlots: ReviewSlot[]
+  /** Một số bản BE cũ có thể còn trường này */
+  upcomingSlots?: ReviewSlot[]
   registeredSlots: ReviewSlot[]
   councilAssignments: CouncilDetail[]
   totalAssignedGroups: number
   totalRegisteredSlots: number
 }
 
+export interface StudentDashboardGroupSummary {
+  id: number
+  groupName: string
+  status: string
+  memberNames: string[]
+}
+
+export interface StudentDashboardTopicSummary {
+  title: string
+  supervisorName: string
+}
+
+export interface StudentDashboardReviewSchedule {
+  date: string
+  startTime: string
+  endTime: string
+  room?: string
+  councilMembers: string[]
+}
+
+export interface StudentDashboardPendingInvitation {
+  invitationId: number
+  groupName: string
+  createdAt: string
+}
+
 export interface StudentDashboardDto {
-  studentInfo: Student
-  group?: Group
-  topic?: Topic
-  upcomingReviews: ReviewSlot[]
-  pendingInvitations: GroupInvitation[]
-  reviewSchedule: CouncilDetail[]
+  group?: StudentDashboardGroupSummary | Group | null
+  topic?: StudentDashboardTopicSummary | Topic | null
+  reviewSchedule?: StudentDashboardReviewSchedule | null
+  pendingInvitations?: StudentDashboardPendingInvitation[]
+  /** Tương thích bản BE cũ */
+  studentInfo?: Student
+  upcomingReviews?: ReviewSlot[]
 }
 
 export interface Tag {
@@ -288,11 +362,13 @@ export interface ReviewSession {
   registrationStatus: string | number
   status: string | number
   orderInSlot?: number
-  councilMembers?: CouncilMemberDetail[]
+  councilMembers?: Array<
+    CouncilMemberDetail & { lecturerName?: string; fullName?: string }
+  >
   algorithmScore?: number
   finalScore?: number
   overallComments?: string
   result?: string
   createdAt: string
-  updatedAt: string
+  updatedAt?: string | null
 }

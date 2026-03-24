@@ -10,6 +10,7 @@ import type {
   Student,
   Group,
   UserDetail,
+  AdminDashboardDto,
   SchedulingResult,
   CouncilDetail,
   Tag,
@@ -166,14 +167,10 @@ export const schedulingService = {
     apiClient.post<ApiResponse<SchedulingResult>>(`/Scheduling/run/${reviewPeriodId}`),
   getResult: (reviewPeriodId: number) =>
     apiClient.get<ApiResponse<SchedulingResult>>(`/Scheduling/result/${reviewPeriodId}`),
-  updateWeights: (data: {
-    w1: number
-    w2: number
-    w3: number
-    w4: number
-    w5: number
-    w6: number
-  }) => apiClient.put<ApiResponse<null>>('/Scheduling/weights', data),
+  updateWeights: (data: { w1: number; w2: number; w3: number; w4: number; w5: number }) =>
+    apiClient.put<ApiResponse<null>>('/Scheduling/weights', data),
+  reset: (reviewPeriodId: number) =>
+    apiClient.post<ApiResponse<null>>(`/Scheduling/reset/${reviewPeriodId}`),
   manualOverride: (data: {
     reviewSlotId: number
     removeLecturerId?: number
@@ -184,7 +181,7 @@ export const schedulingService = {
 }
 
 export const dashboardService = {
-  getAdminDashboard: () => apiClient.get<ApiResponse<any>>('/Dashboard/admin'),
+  getAdminDashboard: () => apiClient.get<ApiResponse<AdminDashboardDto>>('/Dashboard/admin'),
 }
 
 export const tagService = {
@@ -193,8 +190,8 @@ export const tagService = {
   getById: (id: number) => apiClient.get<ApiResponse<Tag>>(`/Tags/${id}`),
   create: (data: { name: string; description?: string }) =>
     apiClient.post<ApiResponse<Tag>>('/Tags', data),
-  update: (id: number, data: { id: number; name: string; description?: string }) =>
-    apiClient.put<ApiResponse<Tag>>(`/Tags/${id}`, { ...data, id }),
+  update: (id: number, data: { name: string; description?: string }) =>
+    apiClient.put<ApiResponse<Tag>>(`/Tags/${id}`, data),
   delete: (id: number) => apiClient.delete<ApiResponse<null>>(`/Tags/${id}`),
 }
 
@@ -213,9 +210,9 @@ export const reviewSessionService = {
   approve: (id: number) =>
     apiClient.post<ApiResponse<ReviewSession>>(`/ReviewSessions/${id}/approve`),
   reject: (id: number, reason: string) =>
-    apiClient.post<ApiResponse<ReviewSession>>(`/ReviewSessions/${id}/reject`, { id, reason }),
+    apiClient.post<ApiResponse<ReviewSession>>(`/ReviewSessions/${id}/reject`, { reason }),
   lock: (id: number) =>
     apiClient.post<ApiResponse<ReviewSession>>(`/ReviewSessions/${id}/lock`),
   updateStatus: (id: number, status: number) =>
-    apiClient.put<ApiResponse<ReviewSession>>(`/ReviewSessions/${id}/status`, { id, status }),
+    apiClient.put<ApiResponse<ReviewSession>>(`/ReviewSessions/${id}/status`, { status }),
 }

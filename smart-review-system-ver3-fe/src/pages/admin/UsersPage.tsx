@@ -24,7 +24,7 @@ import { authService } from '@/api/auth.service'
 import { isApiSuccess } from '@/types/api'
 import { PageWrapper } from '@/components/common/PageWrapper'
 import { formatDateTime } from '@/utils/format'
-import { ROLE_LABELS, ROLE_COLORS } from '@/constants'
+import { ROLE_LABELS, ROLE_COLORS, ROLE_VALUE_LABELS, ROLE_VALUE_COLORS } from '@/constants'
 import { extractListFromApiData } from '@/utils/api'
 
 export const UsersPage = () => {
@@ -99,6 +99,20 @@ export const UsersPage = () => {
     },
   })
 
+  const roleLabel = (role: string | number) => {
+    if (typeof role === 'number') {
+      return ROLE_VALUE_LABELS[role] ?? String(role)
+    }
+    return ROLE_LABELS[role] ?? String(role)
+  }
+
+  const roleColor = (role: string | number) => {
+    if (typeof role === 'number') {
+      return ROLE_VALUE_COLORS[role] ?? 'default'
+    }
+    return ROLE_COLORS[role] ?? 'default'
+  }
+
   const columns = [
     {
       title: 'Email',
@@ -108,14 +122,17 @@ export const UsersPage = () => {
     {
       title: 'Vai trò',
       dataIndex: 'role',
-      render: (role: string) => (
-        <Tag color={ROLE_COLORS[role] || 'default'}>{ROLE_LABELS[role] || role}</Tag>
+      render: (role: string | number) => (
+        <Tag color={roleColor(role)}>{roleLabel(role)}</Tag>
       ),
     },
     {
       title: 'Liên kết',
       render: (_: unknown, record: any) =>
-        record.lecturerName || record.studentName || '-',
+        record.linkedName ??
+        record.lecturerName ??
+        record.studentName ??
+        '-',
     },
     {
       title: 'Trạng thái',

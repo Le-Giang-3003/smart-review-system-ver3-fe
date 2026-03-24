@@ -111,10 +111,8 @@ export const API_SUPPORT = {
   scheduling: {
     run: true,
     getResult: true,
-    /** BE dùng W1–W5; FE gửi w1–w6 (w6 bị bỏ qua) */
     updateWeights: true,
     manualOverride: true,
-    /** BE có POST /Scheduling/reset/{reviewPeriodId}, FE chưa gọi */
     reset: true,
   },
 

@@ -1,14 +1,15 @@
-import { Card, Row, Col, Statistic, Spin, Alert, Table, Tag } from 'antd'
+import { Card, Row, Col, Statistic, Spin, Alert, Table, Tag, Progress } from 'antd'
 import { useQuery } from '@tanstack/react-query'
 import {
   TeamOutlined,
   FileTextOutlined,
   BookOutlined,
   CalendarOutlined,
+  PieChartOutlined,
 } from '@ant-design/icons'
 import { dashboardService } from '@/api/admin.service'
 import { PageWrapper } from '@/components/common/PageWrapper'
-import { PERIOD_STATUS_LABELS, PERIOD_STATUS_COLORS, REVIEW_ROUND_LABELS } from '@/constants'
+import { formatReviewPeriodStatus, formatReviewRound, reviewPeriodStatusColor } from '@/utils/format'
 
 export const AdminDashboard = () => {
   const {
@@ -53,6 +54,8 @@ export const AdminDashboard = () => {
     totalTopics,
     activeSemester,
     reviewPeriods = [],
+    workloadDistribution,
+    slotFillRate,
   } = dashboardData
 
   const reviewPeriodColumns = [
@@ -60,14 +63,14 @@ export const AdminDashboard = () => {
     {
       title: 'Vòng',
       dataIndex: 'round',
-      render: (r: number) => REVIEW_ROUND_LABELS[r] ?? `Vòng ${r}`,
+      render: (r: string | number) => formatReviewRound(r),
     },
     {
       title: 'Trạng thái',
       dataIndex: 'status',
-      render: (s: number) => (
-        <Tag color={PERIOD_STATUS_COLORS[s] || 'default'}>
-          {PERIOD_STATUS_LABELS[s] ?? s}
+      render: (s: string | number) => (
+        <Tag color={reviewPeriodStatusColor(s)}>
+          {formatReviewPeriodStatus(s)}
         </Tag>
       ),
     },
@@ -121,6 +124,43 @@ export const AdminDashboard = () => {
           </Card>
         </Col>
       </Row>
+
+      {workloadDistribution && (
+        <Card
+          title={
+            <span>
+              <PieChartOutlined style={{ color: '#0D9488', marginRight: 8 }} />
+              Phân bổ tải giảng viên (theo đề tài min–max)
+            </span>
+          }
+          style={{ marginBottom: 20 }}
+        >
+          <Row gutter={[16, 16]}>
+            <Col xs={12} sm={6}>
+              <Statistic title="Đang ở mức tối thiểu" value={workloadDistribution.lecturersAtMin} />
+            </Col>
+            <Col xs={12} sm={6}>
+              <Statistic title="Trong khoảng" value={workloadDistribution.lecturersBetween} />
+            </Col>
+            <Col xs={12} sm={6}>
+              <Statistic title="Gần tối đa" value={workloadDistribution.lecturersNearMax} />
+            </Col>
+            <Col xs={12} sm={6}>
+              <Statistic title="Vượt tải" value={workloadDistribution.lecturersOverMax} valueStyle={{ color: '#ef4444' }} />
+            </Col>
+          </Row>
+        </Card>
+      )}
+
+      {typeof slotFillRate === 'number' && (
+        <Card title="Tỷ lệ lấp đầy slot review" style={{ marginBottom: 20 }}>
+          <Progress
+            percent={Math.round(slotFillRate * 100)}
+            status="active"
+            format={(p) => `${p}%`}
+          />
+        </Card>
+      )}
 
       <Card
         title={

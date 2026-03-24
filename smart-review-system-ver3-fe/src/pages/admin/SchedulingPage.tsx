@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { Card, Button, Select, Table, Alert, App, Empty, Tag } from 'antd'
-import { ThunderboltOutlined } from '@ant-design/icons'
+import { Card, Button, Select, Table, Alert, App, Empty, Tag, Popconfirm } from 'antd'
+import { ThunderboltOutlined, UndoOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { schedulingService, reviewPeriodService } from '@/api/admin.service'
-import { formatDate, formatTime } from '@/utils/format'
+import { formatDate, formatTime, normalizeReviewPeriodStatusKey } from '@/utils/format'
 import { PageWrapper } from '@/components/common/PageWrapper'
 import { isApiSuccess } from '@/types/api'
 import type { SchedulingResult } from '@/types/entities'
@@ -31,6 +31,23 @@ export const SchedulingPage = () => {
     enabled: !!selectedPeriodId,
   })
 
+  const resetMutation = useMutation({
+    mutationFn: (periodId: number) => schedulingService.reset(periodId),
+    onSuccess: (res) => {
+      if (isApiSuccess(res.data)) {
+        message.success('Đã reset kết quả lên lịch')
+        queryClient.setQueryData(['scheduling-result', selectedPeriodId], null)
+      } else {
+        message.error(res.data.message || 'Reset thất bại')
+      }
+      queryClient.invalidateQueries({ queryKey: ['scheduling-result', selectedPeriodId] })
+      queryClient.invalidateQueries({ queryKey: ['review-periods'] })
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Reset thất bại')
+    },
+  })
+
   const runMutation = useMutation({
     mutationFn: (periodId: number) => schedulingService.run(periodId),
     onSuccess: (res) => {
@@ -50,15 +67,20 @@ export const SchedulingPage = () => {
     },
   })
 
-  const handleGenerate = () => {
-    if (selectedPeriodId) {
-      runMutation.mutate(selectedPeriodId)
-    } else {
-      message.warning('Chọn đợt review')
-    }
-  }
-
   const selectedPeriod = periods.find((p: any) => p.id === selectedPeriodId)
+  const periodStatusKey = normalizeReviewPeriodStatusKey(selectedPeriod?.status)
+
+  const handleGenerate = () => {
+    if (!selectedPeriodId) {
+      message.warning('Chọn đợt review')
+      return
+    }
+    if (periodStatusKey !== 'Scheduling') {
+      message.warning('Chỉ chạy thuật toán khi đợt review ở trạng thái "Scheduling" (Đang lên lịch).')
+      return
+    }
+    runMutation.mutate(selectedPeriodId)
+  }
 
   const sessionColumns = [
     {
@@ -118,15 +140,31 @@ export const SchedulingPage = () => {
             icon={<ThunderboltOutlined />}
             loading={runMutation.isPending}
             onClick={handleGenerate}
-            disabled={!selectedPeriodId}
+            disabled={!selectedPeriodId || periodStatusKey !== 'Scheduling'}
           >
             Chạy thuật toán
           </Button>
+          <Popconfirm
+            title="Reset kết quả lên lịch cho đợt này?"
+            description="Thao tác này xóa kết quả phân lịch; bạn có thể chạy lại thuật toán sau."
+            okText="Reset"
+            cancelText="Hủy"
+            disabled={!selectedPeriodId}
+            onConfirm={() => selectedPeriodId && resetMutation.mutate(selectedPeriodId)}
+          >
+            <Button
+              icon={<UndoOutlined />}
+              loading={resetMutation.isPending}
+              disabled={!selectedPeriodId}
+            >
+              Reset lịch
+            </Button>
+          </Popconfirm>
         </div>
 
-        {selectedPeriod && selectedPeriod.status !== 'Open' && selectedPeriod.status !== 'Scheduling' && (
+        {selectedPeriod && periodStatusKey !== 'Scheduling' && (
           <Alert
-            message={`Đợt review này đang ở trạng thái "${selectedPeriod.status}". Chỉ đợt ở trạng thái "Open" mới có thể chạy thuật toán.`}
+            message={`Đợt review đang ở trạng thái "${selectedPeriod.status}". Theo quy trình BE, chuyển đợt sang "Scheduling" (Đang lên lịch) rồi mới chạy thuật toán phân lịch.`}
             type="info"
             showIcon
             style={{ marginBottom: 16 }}
