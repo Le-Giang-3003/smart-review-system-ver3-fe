@@ -9,19 +9,26 @@ import { useQuery } from '@tanstack/react-query'
 import { lecturerApiService } from '@/api/lecturer.service'
 import { PageWrapper } from '@/components/common/PageWrapper'
 import { formatDate, formatTime } from '@/utils/format'
+import { isApiSuccess } from '@/types/api'
 
 export const LecturerDashboard = () => {
   const {
-    data: dashboard,
+    data,
     isLoading,
     error,
   } = useQuery({
     queryKey: ['lecturer-dashboard'],
     queryFn: async () => {
       const res = await lecturerApiService.getDashboard()
+      if (!isApiSuccess(res.data)) {
+        // Surface API error so UI can show proper message
+        throw new Error(res.data.message || 'Không thể tải dữ liệu dashboard giảng viên')
+      }
       return res.data.data
     },
   })
+
+  const dashboard = data
 
   if (isLoading) {
     return (
@@ -38,7 +45,10 @@ export const LecturerDashboard = () => {
       <PageWrapper title="Trang giảng viên">
         <Alert
           message="Không thể tải dữ liệu"
-          description="Vui lòng thử lại sau hoặc liên hệ quản trị viên."
+          description={
+            (error as Error | undefined)?.message ||
+            'Vui lòng thử lại sau hoặc liên hệ quản trị viên.'
+          }
           type="warning"
           showIcon
         />
