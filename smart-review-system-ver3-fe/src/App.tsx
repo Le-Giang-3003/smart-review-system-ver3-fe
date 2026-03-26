@@ -55,70 +55,94 @@ const queryClient = new QueryClient({
 
 const getAdminMenuItems = (navigate: (path: string) => void): MenuProps['items'] => [
   {
-    key: '/admin',
-    icon: <DashboardOutlined />,
-    label: 'Tổng quan',
-    onClick: () => navigate('/admin'),
+    type: 'group',
+    label: 'TỔNG QUAN',
+    children: [
+      {
+        key: '/admin',
+        icon: <DashboardOutlined />,
+        label: 'Dashboard',
+        onClick: () => navigate('/admin'),
+      },
+    ],
   },
   {
-    key: '/admin/semesters',
-    icon: <CalendarOutlined />,
-    label: 'Học kỳ',
-    onClick: () => navigate('/admin/semesters'),
+    type: 'group',
+    label: 'QUẢN LÝ DỮ LIỆU',
+    children: [
+      {
+        key: '/admin/semesters',
+        icon: <CalendarOutlined />,
+        label: 'Học kỳ',
+        onClick: () => navigate('/admin/semesters'),
+      },
+      {
+        key: '/admin/lecturers',
+        icon: <SolutionOutlined />,
+        label: 'Giảng viên',
+        onClick: () => navigate('/admin/lecturers'),
+      },
+      {
+        key: '/admin/students',
+        icon: <TeamOutlined />,
+        label: 'Sinh viên',
+        onClick: () => navigate('/admin/students'),
+      },
+      {
+        key: '/admin/groups',
+        icon: <ApartmentOutlined />,
+        label: 'Nhóm',
+        onClick: () => navigate('/admin/groups'),
+      },
+      {
+        key: '/admin/topics',
+        icon: <FileTextOutlined />,
+        label: 'Đề tài',
+        onClick: () => navigate('/admin/topics'),
+      },
+    ],
   },
   {
-    key: '/admin/review-periods',
-    icon: <ClockCircleOutlined />,
-    label: 'Đợt review',
-    onClick: () => navigate('/admin/review-periods'),
+    type: 'group',
+    label: 'LÊN LỊCH REVIEW',
+    children: [
+      {
+        key: '/admin/review-periods',
+        icon: <ClockCircleOutlined />,
+        label: 'Đợt review',
+        onClick: () => navigate('/admin/review-periods'),
+      },
+      {
+        key: '/admin/review-slots',
+        icon: <FieldTimeOutlined />,
+        label: 'Slot review',
+        onClick: () => navigate('/admin/review-slots'),
+      },
+      {
+        key: '/admin/scheduling',
+        icon: <ThunderboltOutlined />,
+        label: 'Lên lịch',
+        onClick: () => navigate('/admin/scheduling'),
+      },
+      {
+        key: '/admin/review-sessions',
+        icon: <AuditOutlined />,
+        label: 'Hội đồng',
+        onClick: () => navigate('/admin/review-sessions'),
+      },
+    ],
   },
   {
-    key: '/admin/review-slots',
-    icon: <FieldTimeOutlined />,
-    label: 'Slot review',
-    onClick: () => navigate('/admin/review-slots'),
-  },
-  {
-    key: '/admin/topics',
-    icon: <FileTextOutlined />,
-    label: 'Đề tài',
-    onClick: () => navigate('/admin/topics'),
-  },
-  {
-    key: '/admin/lecturers',
-    icon: <SolutionOutlined />,
-    label: 'Giảng viên',
-    onClick: () => navigate('/admin/lecturers'),
-  },
-  {
-    key: '/admin/students',
-    icon: <TeamOutlined />,
-    label: 'Sinh viên',
-    onClick: () => navigate('/admin/students'),
-  },
-  {
-    key: '/admin/groups',
-    icon: <ApartmentOutlined />,
-    label: 'Nhóm',
-    onClick: () => navigate('/admin/groups'),
-  },
-  {
-    key: '/admin/users',
-    icon: <UserOutlined />,
-    label: 'Tài khoản',
-    onClick: () => navigate('/admin/users'),
-  },
-  {
-    key: '/admin/review-sessions',
-    icon: <AuditOutlined />,
-    label: 'Phiên review',
-    onClick: () => navigate('/admin/review-sessions'),
-  },
-  {
-    key: '/admin/scheduling',
-    icon: <ThunderboltOutlined />,
-    label: 'Lên lịch',
-    onClick: () => navigate('/admin/scheduling'),
+    type: 'group',
+    label: 'HỆ THỐNG',
+    children: [
+      {
+        key: '/admin/users',
+        icon: <UserOutlined />,
+        label: 'Tài khoản',
+        onClick: () => navigate('/admin/users'),
+      },
+    ],
   },
 ]
 

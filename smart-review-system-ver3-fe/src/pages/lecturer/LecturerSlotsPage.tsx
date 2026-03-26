@@ -17,6 +17,18 @@ export const LecturerSlotsPage = () => {
   const queryClient = useQueryClient()
   const { message } = App.useApp()
 
+  const {
+    data: lecturerDashboard,
+    isLoading: lecturerDashboardLoading,
+    error: lecturerDashboardError,
+  } = useQuery({
+    queryKey: ['lecturer-dashboard'],
+    queryFn: async () => {
+      const res = await lecturerApiService.getDashboard()
+      return res.data.data
+    },
+  })
+
   const { data: periods = [] } = useQuery({
     queryKey: ['review-periods-lecturer'],
     queryFn: async () => {
@@ -140,6 +152,31 @@ export const LecturerSlotsPage = () => {
       title="Đăng ký slot review"
       subtitle="Chọn đợt review và đăng ký các slot bạn có thể tham gia"
     >
+      {lecturerDashboardError && (
+        <Alert
+          message="Không thể tải chuyên môn"
+          description="Vui lòng thử lại sau hoặc liên hệ quản trị viên."
+          type="warning"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+      )}
+
+      {!lecturerDashboardLoading && lecturerDashboard?.lecturerInfo?.expertises?.length ? (
+        <Card style={{ marginBottom: 16 }}>
+          <div style={{ marginBottom: 8, fontWeight: 600, color: '#44403C' }}>
+            Chuyên môn của bạn
+          </div>
+          <Space wrap>
+            {lecturerDashboard.lecturerInfo.expertises.map((exp: string, idx: number) => (
+              <Tag key={idx} color="orange">
+                {exp}
+              </Tag>
+            ))}
+          </Space>
+        </Card>
+      ) : null}
+
       <Card>
         <div style={{ marginBottom: 20, display: 'flex', gap: 16, alignItems: 'center' }}>
           <Select
