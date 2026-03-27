@@ -198,7 +198,6 @@ export const SchedulingPage = () => {
       w3: values.w3,
       w4: values.w4,
       w5: values.w5,
-      w6: values.w6,
     })
   }
 
@@ -286,42 +285,34 @@ export const SchedulingPage = () => {
                   layout="vertical"
                   initialValues={{
                     w1: 0.3,
-                    w2: 0.1,
-                    w3: 0.15,
-                    w4: 0.2,
+                    w2: 0.2,
+                    w3: 0.25,
+                    w4: 0.15,
                     w5: 0.1,
-                    w6: 0.15,
                   }}
                 >
                   <Space wrap size={16}>
                     <Form.Item name="w1" label="W1 - Jaccard" rules={[{ required: true }]}>
                       <InputNumber min={0} max={1} step={0.05} />
                     </Form.Item>
-                    <Form.Item name="w2" label="W2 - Preference" rules={[{ required: true }]}>
+                    <Form.Item name="w2" label="W2 - InstructorPresence" rules={[{ required: true }]}>
                       <InputNumber min={0} max={1} step={0.05} />
                     </Form.Item>
                     <Form.Item
                       name="w3"
-                      label="W3 - InstructorPresence"
+                      label="W3 - ReviewInheritance"
                       rules={[{ required: true }]}
                     >
                       <InputNumber min={0} max={1} step={0.05} />
                     </Form.Item>
                     <Form.Item
                       name="w4"
-                      label="W4 - ReviewInheritance"
+                      label="W4 - HistoryDiff (penalty)"
                       rules={[{ required: true }]}
                     >
                       <InputNumber min={0} max={1} step={0.05} />
                     </Form.Item>
-                    <Form.Item name="w5" label="W5 - HistoryDiff" rules={[{ required: true }]}>
-                      <InputNumber min={0} max={1} step={0.05} />
-                    </Form.Item>
-                    <Form.Item
-                      name="w6"
-                      label="W6 - LoadImbalance"
-                      rules={[{ required: true }]}
-                    >
+                    <Form.Item name="w5" label="W5 - LoadImbalance (penalty)" rules={[{ required: true }]}>
                       <InputNumber min={0} max={1} step={0.05} />
                     </Form.Item>
                   </Space>

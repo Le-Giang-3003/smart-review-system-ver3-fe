@@ -170,7 +170,7 @@ export const schedulingService = {
     apiClient.post<ApiResponse<SchedulingResult>>(`/Scheduling/run/${reviewPeriodId}`),
   getResult: (reviewPeriodId: number) =>
     apiClient.get<ApiResponse<SchedulingResult>>(`/Scheduling/result/${reviewPeriodId}`),
-  updateWeights: (data: { w1: number; w2: number; w3: number; w4: number; w5: number; w6: number }) =>
+  updateWeights: (data: { w1: number; w2: number; w3: number; w4: number; w5: number }) =>
     apiClient.put<ApiResponse<null>>('/Scheduling/weights', data),
   reset: (reviewPeriodId: number) =>
     apiClient.post<ApiResponse<null>>(`/Scheduling/reset/${reviewPeriodId}`),
