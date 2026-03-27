@@ -99,9 +99,20 @@ export const INVITATION_STATUS_COLORS: Record<string, string> = {
 }
 
 export const COMPATIBILITY_TYPE_LABELS: Record<string, string> = {
-  Normal: 'Trung lập',
+  Normal: 'Bình thường',
   Preferred: 'Ưu tiên',
   StrongIncompatible: 'Không tương thích',
+}
+
+export const FEEDBACK_STATUS_LABELS: Record<number, string> = {
+  0: 'Nháp',
+  1: 'Đã nộp',
+}
+
+export const SUGGESTION_LABELS: Record<number, string> = {
+  0: 'Đạt',
+  1: 'Chỉnh sửa lại',
+  2: 'Không đạt',
 }
 
 export const ROLE_LABELS: Record<string, string> = {

@@ -15,6 +15,7 @@ import type {
   CouncilDetail,
   Tag,
   ReviewSession,
+  Checklist,
 } from '@/types/entities'
 
 export const semesterService = {
@@ -119,6 +120,8 @@ export const lecturerService = {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
   },
+  upsertCompatibility: (lecturerAId: number, lecturerBId: number, level: string) =>
+    apiClient.put<ApiResponse<any>>('/Lecturers/compatibility', { lecturerAId, lecturerBId, level }),
 }
 
 export const studentService = {
@@ -167,7 +170,7 @@ export const schedulingService = {
     apiClient.post<ApiResponse<SchedulingResult>>(`/Scheduling/run/${reviewPeriodId}`),
   getResult: (reviewPeriodId: number) =>
     apiClient.get<ApiResponse<SchedulingResult>>(`/Scheduling/result/${reviewPeriodId}`),
-  updateWeights: (data: { w1: number; w2: number; w3: number; w4: number; w5: number }) =>
+  updateWeights: (data: { w1: number; w2: number; w3: number; w4: number; w5: number; w6: number }) =>
     apiClient.put<ApiResponse<null>>('/Scheduling/weights', data),
   reset: (reviewPeriodId: number) =>
     apiClient.post<ApiResponse<null>>(`/Scheduling/reset/${reviewPeriodId}`),
@@ -178,6 +181,23 @@ export const schedulingService = {
     swapFromLecturerId?: number
     swapToLecturerId?: number
   }) => apiClient.post<ApiResponse<null>>('/Scheduling/manual-override', data),
+}
+
+export const checklistService = {
+  getByPeriod: (reviewPeriodId: number) =>
+    apiClient.get<ApiResponse<Checklist>>(`/Checklists/by-period/${reviewPeriodId}`),
+  create: (data: { reviewPeriodId: number; name: string }) =>
+    apiClient.post<ApiResponse<Checklist>>('/Checklists', data),
+  addItem: (
+    checklistId: number,
+    data: { orderNo: number; title: string; description?: string; maxScore?: number }
+  ) => apiClient.post<ApiResponse<unknown>>(`/Checklists/${checklistId}/items`, data),
+  updateItem: (
+    itemId: number,
+    data: { title: string; description?: string; maxScore?: number; orderNo: number }
+  ) => apiClient.put<ApiResponse<unknown>>(`/Checklists/items/${itemId}`, data),
+  deleteItem: (itemId: number) =>
+    apiClient.delete<ApiResponse<unknown>>(`/Checklists/items/${itemId}`),
 }
 
 export const dashboardService = {

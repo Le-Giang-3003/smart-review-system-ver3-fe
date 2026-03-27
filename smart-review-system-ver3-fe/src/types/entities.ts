@@ -372,3 +372,112 @@ export interface ReviewSession {
   createdAt: string
   updatedAt?: string | null
 }
+
+export interface ChecklistItem {
+  id: number
+  orderNo: number
+  title: string
+  description?: string
+  maxScore?: number
+}
+
+export interface Checklist {
+  id: number
+  reviewPeriodId: number
+  name: string
+  items: ChecklistItem[]
+  createdAt: string
+}
+
+export enum FeedbackStatus {
+  Draft = 0,
+  Submitted = 1,
+}
+
+export enum ReviewSuggestion {
+  Pass = 0,
+  Revise = 1,
+  Fail = 2,
+}
+
+export interface MyReviewSession {
+  reviewSessionId: number
+  reviewPeriodId: number
+  reviewPeriodName: string
+  round: number
+  slotId: number
+  date: string
+  startTime: string
+  endTime: string
+  room?: string
+  groupId: number
+  groupName: string
+  topicTitle?: string
+  supervisorName?: string
+  isChairman: boolean
+  feedbackId?: number
+  feedbackStatus?: number
+}
+
+export interface FeedbackDetail {
+  id: number
+  checklistItemId: number
+  orderNo: number
+  itemTitle: string
+  maxScore?: number
+  score?: number
+  comment?: string
+  isPassed?: boolean
+}
+
+export interface Feedback {
+  id: number
+  reviewSessionId: number
+  groupId: number
+  groupName: string
+  lecturerId: number
+  lecturerName: string
+  overallComment?: string
+  suggestion?: number
+  status: number
+  createdAt: string
+  submittedAt?: string
+  details: FeedbackDetail[]
+}
+
+export interface UpdateDetailItem {
+  checklistItemId: number
+  score?: number
+  comment?: string
+  isPassed?: boolean
+}
+
+export interface ReviewerFeedbackSummary {
+  feedbackId: number
+  reviewerName: string
+  isChairman: boolean
+  overallComment?: string
+  suggestion?: number
+  status: number
+  submittedAt?: string
+}
+
+export interface RoundFeedback {
+  round: number
+  reviewPeriodName: string
+  feedbacks: ReviewerFeedbackSummary[]
+}
+
+export interface GroupFeedbackHistory {
+  groupId: number
+  groupName: string
+  topicTitle?: string
+  rounds: RoundFeedback[]
+}
+
+export interface MyReviewSessionDto extends MyReviewSession {}
+export interface FeedbackDetailDto extends FeedbackDetail {}
+export interface FeedbackDto extends Feedback {}
+export interface ReviewerFeedbackSummaryDto extends ReviewerFeedbackSummary {}
+export interface RoundFeedbackDto extends RoundFeedback {}
+export interface GroupFeedbackHistoryDto extends GroupFeedbackHistory {}

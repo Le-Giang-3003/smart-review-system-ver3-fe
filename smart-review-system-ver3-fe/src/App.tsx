@@ -17,9 +17,11 @@ import { StudentsPage } from '@/pages/admin/StudentsPage'
 import { GroupsPage } from '@/pages/admin/GroupsPage'
 import { ReviewSessionsPage } from '@/pages/admin/ReviewSessionsPage'
 import { SchedulingPage } from '@/pages/admin/SchedulingPage'
+import { ChecklistsPage } from '@/pages/admin/ChecklistsPage'
 import { UsersPage } from '@/pages/admin/UsersPage'
 import { LecturerDashboard } from '@/pages/lecturer/LecturerDashboard'
 import { LecturerSlotsPage } from '@/pages/lecturer/LecturerSlotsPage'
+import { LecturerFeedbackPage } from '@/pages/lecturer/LecturerFeedbackPage'
 import { StudentDashboard } from '@/pages/student/StudentDashboard'
 import { StudentGroupPage } from '@/pages/student/StudentGroupPage'
 import { StudentTopicsPage } from '@/pages/student/StudentTopicsPage'
@@ -42,6 +44,8 @@ import {
   ScheduleOutlined,
   BookOutlined,
   AuditOutlined,
+  CheckSquareOutlined,
+  FormOutlined,
 } from '@ant-design/icons'
 
 const queryClient = new QueryClient({
@@ -130,6 +134,12 @@ const getAdminMenuItems = (navigate: (path: string) => void): MenuProps['items']
         label: 'Hội đồng',
         onClick: () => navigate('/admin/review-sessions'),
       },
+      {
+        key: '/admin/checklists',
+        icon: <CheckSquareOutlined />,
+        label: 'Checklist đánh giá',
+        onClick: () => navigate('/admin/checklists'),
+      },
     ],
   },
   {
@@ -158,6 +168,12 @@ const getLecturerMenuItems = (navigate: (path: string) => void): MenuProps['item
     icon: <ScheduleOutlined />,
     label: 'Đăng ký slot',
     onClick: () => navigate('/lecturer/slots'),
+  },
+  {
+    key: '/lecturer/feedbacks',
+    icon: <FormOutlined />,
+    label: 'Chấm điểm',
+    onClick: () => navigate('/lecturer/feedbacks'),
   },
 ]
 
@@ -243,6 +259,7 @@ function App() {
                 <Route path="users" element={<UsersPage />} />
                 <Route path="review-sessions" element={<ReviewSessionsPage />} />
                 <Route path="scheduling" element={<SchedulingPage />} />
+                <Route path="checklists" element={<ChecklistsPage />} />
               </Route>
 
               {/* Lecturer routes */}
@@ -258,6 +275,7 @@ function App() {
               >
                 <Route index element={<LecturerDashboard />} />
                 <Route path="slots" element={<LecturerSlotsPage />} />
+                <Route path="feedbacks" element={<LecturerFeedbackPage />} />
               </Route>
 
               {/* Student routes */}

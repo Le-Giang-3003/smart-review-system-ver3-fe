@@ -1,5 +1,21 @@
 import { useState, useRef } from 'react'
-import { Table, Button, Space, Modal, Form, Select, Input, App, Row, Col, Tag, Tooltip } from 'antd'
+import {
+  Table,
+  Button,
+  Space,
+  Modal,
+  Form,
+  Select,
+  Input,
+  App,
+  Row,
+  Col,
+  Tag,
+  Tooltip,
+  Radio,
+  Tabs,
+  Card,
+} from 'antd'
 import { 
   PlusOutlined, EditOutlined, DeleteOutlined, 
   UploadOutlined, BuildOutlined, TagsOutlined, 
@@ -10,6 +26,7 @@ import { PageWrapper } from '@/components/common/PageWrapper'
 import type { Lecturer } from '@/types/entities'
 import { isApiSuccess } from '@/types/api'
 import { extractListFromApiData } from '@/utils/api'
+import { COMPATIBILITY_TYPE_LABELS } from '@/constants'
 
 export const LecturersPage = () => {
   const [modalOpen, setModalOpen] = useState(false)
@@ -19,6 +36,7 @@ export const LecturersPage = () => {
   const [selectedLecturerId, setSelectedLecturerId] = useState<number | null>(null)
   const [expertiseModalOpen, setExpertiseModalOpen] = useState(false)
   const [expertiseLecturer, setExpertiseLecturer] = useState<Lecturer | null>(null)
+  const [compatibilityForm] = Form.useForm()
   
   const [form] = Form.useForm()
   const [loadForm] = Form.useForm()
@@ -149,6 +167,22 @@ export const LecturersPage = () => {
     },
   })
 
+  const updateCompatibilityMutation = useMutation({
+    mutationFn: (data: { lecturerAId: number; lecturerBId: number; level: string }) =>
+      lecturerService.upsertCompatibility(data.lecturerAId, data.lecturerBId, data.level),
+    onSuccess: (res) => {
+      if (isApiSuccess(res.data)) {
+        message.success('Cập nhật tương thích thành công')
+        compatibilityForm.resetFields(['lecturerBId'])
+      } else {
+        message.error(res.data.message || 'Cập nhật tương thích thất bại')
+      }
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+    },
+  })
+
   const openCreate = () => {
     form.resetFields()
     form.setFieldsValue({ minTopics: 0, maxTopics: 3 })
@@ -224,6 +258,20 @@ export const LecturersPage = () => {
     })
   }
 
+  const onCompatibilitySubmit = () => {
+    compatibilityForm.validateFields().then((values) => {
+      if (values.lecturerAId === values.lecturerBId) {
+        message.warning('Vui lòng chọn 2 giảng viên khác nhau')
+        return
+      }
+      updateCompatibilityMutation.mutate({
+        lecturerAId: values.lecturerAId,
+        lecturerBId: values.lecturerBId,
+        level: values.level,
+      })
+    })
+  }
+
   const lecturerColumns = [
     { title: 'Họ tên', dataIndex: 'fullName' },
     { title: 'Mã GV', dataIndex: 'lecturerCode' },
@@ -289,33 +337,95 @@ export const LecturersPage = () => {
   ]
 
   return (
-    <PageWrapper title="Quản lý giảng viên" extra={
-      <Space>
-        <input 
-          type="file" 
-          accept=".xlsx,.xls" 
-          style={{ display: 'none' }} 
-          ref={fileInputRef}
-          onChange={handleFileUpload} 
-        />
-        <Button 
-          icon={<UploadOutlined />} 
-          onClick={() => fileInputRef.current?.click()}
-          loading={importMutation.isPending}
-        >
-          Import Excel
-        </Button>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-          Thêm GV
-        </Button>
-      </Space>
-    }>
-      <Table
-        columns={lecturerColumns}
-        dataSource={lecturers}
-        rowKey="id"
-        loading={isLoading}
-        pagination={{ pageSize: 12 }}
+    <PageWrapper title="Quản lý giảng viên">
+      <Tabs
+        items={[
+          {
+            key: 'list',
+            label: 'Danh sách',
+            children: (
+              <>
+                <Space style={{ marginBottom: 16 }}>
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls"
+                    style={{ display: 'none' }}
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                  />
+                  <Button
+                    icon={<UploadOutlined />}
+                    onClick={() => fileInputRef.current?.click()}
+                    loading={importMutation.isPending}
+                  >
+                    Import Excel
+                  </Button>
+                  <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+                    Thêm GV
+                  </Button>
+                </Space>
+                <Table
+                  columns={lecturerColumns}
+                  dataSource={lecturers}
+                  rowKey="id"
+                  loading={isLoading}
+                  pagination={{ pageSize: 12 }}
+                />
+              </>
+            ),
+          },
+          {
+            key: 'compatibility',
+            label: 'Tương thích',
+            children: (
+              <Card>
+                <Form
+                  form={compatibilityForm}
+                  layout="vertical"
+                  initialValues={{ level: 'Normal' }}
+                  style={{ maxWidth: 680 }}
+                >
+                  <Form.Item name="lecturerAId" label="Giảng viên A" rules={[{ required: true }]}>
+                    <Select
+                      placeholder="Chọn giảng viên A"
+                      options={lecturers.map((lecturer) => ({
+                        label: `${lecturer.fullName} (${lecturer.lecturerCode})`,
+                        value: lecturer.id,
+                      }))}
+                    />
+                  </Form.Item>
+                  <Form.Item name="lecturerBId" label="Giảng viên B" rules={[{ required: true }]}>
+                    <Select
+                      placeholder="Chọn giảng viên B"
+                      options={lecturers.map((lecturer) => ({
+                        label: `${lecturer.fullName} (${lecturer.lecturerCode})`,
+                        value: lecturer.id,
+                      }))}
+                    />
+                  </Form.Item>
+                  <Form.Item name="level" label="Mức tương thích" rules={[{ required: true }]}>
+                    <Radio.Group>
+                      <Space direction="vertical">
+                        <Radio value="Normal">{COMPATIBILITY_TYPE_LABELS.Normal}</Radio>
+                        <Radio value="Preferred">{COMPATIBILITY_TYPE_LABELS.Preferred}</Radio>
+                        <Radio value="StrongIncompatible">
+                          {COMPATIBILITY_TYPE_LABELS.StrongIncompatible}
+                        </Radio>
+                      </Space>
+                    </Radio.Group>
+                  </Form.Item>
+                  <Button
+                    type="primary"
+                    onClick={onCompatibilitySubmit}
+                    loading={updateCompatibilityMutation.isPending}
+                  >
+                    Cập nhật
+                  </Button>
+                </Form>
+              </Card>
+            ),
+          },
+        ]}
       />
 
       <Modal

@@ -83,6 +83,16 @@ export const API_SUPPORT = {
     batchUpdateWorkload: true,
     getSemesterLoads: true,
     import: true,
+    upsertCompatibility: true,
+  },
+
+  // ── admin.service: checklistService ──
+  checklists: {
+    getByPeriod: true,
+    create: true,
+    addItem: true,
+    updateItem: true,
+    deleteItem: true,
   },
 
   // ── admin.service: studentService ──
@@ -163,6 +173,18 @@ export const API_SUPPORT = {
     getAvailableSlots: true,
     registerForSlot: true,
     unregisterFromSlot: true,
+  },
+
+  // ── lecturer.service: feedbackService ──
+  feedbacks: {
+    getMySessions: true,
+    create: true,
+    getById: true,
+    updateDetails: true,
+    updateComment: true,
+    submit: true,
+    getBySession: true,
+    getGroupHistory: true,
   },
 } as const
 
