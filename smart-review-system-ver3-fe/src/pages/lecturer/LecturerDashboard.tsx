@@ -57,6 +57,16 @@ export const LecturerDashboard = () => {
   }
 
   const { lecturerInfo, registeredSlots = [], councilAssignments = [], totalAssignedGroups, totalRegisteredSlots } = dashboard
+  const now = new Date()
+  const assignedSlots = [...councilAssignments]
+  const upcomingAssignedSlots = assignedSlots.filter((item: { date: string; endTime: string }) => {
+    const endAt = new Date(`${item.date}T${item.endTime}`)
+    return !Number.isNaN(endAt.getTime()) && endAt >= now
+  })
+  const chairmanCount = assignedSlots.filter(
+    (item: { members: { lecturerId: number; isChairman: boolean }[] }) =>
+      item.members?.some((m) => m.lecturerId === lecturerInfo?.id && m.isChairman),
+  ).length
 
   const slotColumns = [
     {
@@ -81,7 +91,7 @@ export const LecturerDashboard = () => {
     },
   ]
 
-  const councilColumns = [
+  const assignedColumns = [
     {
       title: 'Ngày',
       dataIndex: 'date',
@@ -110,10 +120,18 @@ export const LecturerDashboard = () => {
       },
     },
     {
+      title: 'Số nhóm',
+      dataIndex: 'groups',
+      align: 'center' as const,
+      render: (groups: { groupName: string }[]) => groups?.length ?? 0,
+    },
+    {
       title: 'Nhóm review',
       dataIndex: 'groups',
-      render: (groups: { groupName: string }[]) =>
-        groups?.map((g) => g.groupName).join(', ') || '-',
+      render: (groups: { groupName: string; topicTitle?: string }[]) =>
+        groups?.length
+          ? groups.map((g) => (g.topicTitle ? `${g.groupName} (${g.topicTitle})` : g.groupName)).join(', ')
+          : '-',
     },
   ]
 
@@ -144,8 +162,8 @@ export const LecturerDashboard = () => {
         <Col xs={24} sm={12} lg={6}>
           <Card className="stat-card" style={{ borderTop: '3px solid #22C55E' }}>
             <Statistic
-              title="Hội đồng tham gia"
-              value={councilAssignments.length}
+              title="Slot được phân công"
+              value={assignedSlots.length}
               prefix={<CalendarOutlined style={{ color: '#22C55E' }} />}
             />
           </Card>
@@ -177,6 +195,29 @@ export const LecturerDashboard = () => {
         </Card>
       )}
 
+      <Card
+        title="Lịch review được phân công (sắp tới)"
+        style={{ marginBottom: 20 }}
+        extra={
+          <Space size={8}>
+            <Tag color="green">Sắp tới: {upcomingAssignedSlots.length}</Tag>
+            <Tag color="volcano">Vai trò Chủ tịch: {chairmanCount}</Tag>
+          </Space>
+        }
+      >
+        {upcomingAssignedSlots.length > 0 ? (
+          <Table
+            columns={assignedColumns}
+            dataSource={upcomingAssignedSlots}
+            rowKey="councilId"
+            pagination={false}
+            size="small"
+          />
+        ) : (
+          <Empty description="Hiện chưa có slot review sắp tới được phân công" />
+        )}
+      </Card>
+
       <Row gutter={[20, 20]}>
         <Col xs={24} lg={12}>
           <Card title="Slot đã đăng ký" style={{ height: '100%' }}>
@@ -194,11 +235,11 @@ export const LecturerDashboard = () => {
           </Card>
         </Col>
         <Col xs={24} lg={12}>
-          <Card title="Hội đồng review" style={{ height: '100%' }}>
-            {councilAssignments.length > 0 ? (
+          <Card title="Toàn bộ phân công hội đồng" style={{ height: '100%' }}>
+            {assignedSlots.length > 0 ? (
               <Table
-                columns={councilColumns}
-                dataSource={councilAssignments}
+                columns={assignedColumns}
+                dataSource={assignedSlots}
                 rowKey="councilId"
                 pagination={false}
                 size="small"
