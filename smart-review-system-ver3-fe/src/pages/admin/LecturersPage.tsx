@@ -312,25 +312,27 @@ export const LecturersPage = () => {
             label: 'Danh sách',
             children: (
               <>
-                <Space style={{ marginBottom: 16 }}>
-                  <input
-                    type="file"
-                    accept=".xlsx,.xls"
-                    style={{ display: 'none' }}
-                    ref={fileInputRef}
-                    onChange={handleFileUpload}
-                  />
-                  <Button
-                    icon={<UploadOutlined />}
-                    onClick={() => fileInputRef.current?.click()}
-                    loading={importMutation.isPending}
-                  >
-                    Import Excel
-                  </Button>
-                  <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-                    Thêm GV
-                  </Button>
-                </Space>
+                <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
+                  <Space>
+                    <input
+                      type="file"
+                      accept=".xlsx,.xls"
+                      style={{ display: 'none' }}
+                      ref={fileInputRef}
+                      onChange={handleFileUpload}
+                    />
+                    <Button
+                      icon={<UploadOutlined />}
+                      onClick={() => fileInputRef.current?.click()}
+                      loading={importMutation.isPending}
+                    >
+                      Import Excel
+                    </Button>
+                    <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+                      Thêm GV
+                    </Button>
+                  </Space>
+                </div>
                 <Table
                   columns={lecturerColumns}
                   dataSource={lecturers}
