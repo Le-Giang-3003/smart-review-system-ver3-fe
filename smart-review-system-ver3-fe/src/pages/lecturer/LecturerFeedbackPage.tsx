@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import {
   App,
+  Alert,
   Button,
   Drawer,
   Form,
@@ -38,10 +39,13 @@ export const LecturerFeedbackPage = () => {
   const invalidateFeedback = () =>
     queryClient.invalidateQueries({ queryKey: ['feedback-detail', activeFeedbackId] })
 
-  const { data: mySessions = [], isLoading } = useQuery({
+  const { data: mySessions = [], isLoading, error: sessionsError } = useQuery({
     queryKey: ['my-review-sessions'],
     queryFn: async () => {
       const res = await feedbackService.getMySessions()
+      if (!isApiSuccess(res.data)) {
+        throw new Error(res.data.message || 'Không tải được danh sách phiên review')
+      }
       return extractListFromApiData<MyReviewSession>(res.data?.data)
     },
   })
@@ -307,6 +311,14 @@ export const LecturerFeedbackPage = () => {
 
   return (
     <PageWrapper title="Chấm điểm hội đồng">
+      {sessionsError ? (
+        <Alert
+          type="warning"
+          showIcon
+          style={{ marginBottom: 16 }}
+          message={(sessionsError as Error).message || 'Không tải được danh sách phiên review'}
+        />
+      ) : null}
       <Table
         columns={sessionColumns}
         dataSource={mySessions}
