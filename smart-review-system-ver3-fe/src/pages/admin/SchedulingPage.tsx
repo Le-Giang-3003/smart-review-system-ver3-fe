@@ -117,7 +117,7 @@ export const SchedulingPage = () => {
     modal.confirm({
       title: 'Reset lịch đợt review?',
       content:
-        'Xóa toàn bộ hội đồng đã xếp cho đợt này và đưa trạng thái về «Đang lên lịch» để chạy thuật toán lại. Phù hợp demo — không cần seed lại DB.',
+        'Xóa toàn bộ hội đồng đã xếp cho đợt này và đưa trạng thái về «Mở đăng ký» (Open) để giảng viên và sinh viên đăng ký / cập nhật slot review. Sau đó admin chuyển đợt sang «Đang lên lịch» (Scheduling) rồi mới chạy xếp lịch lại.',
       okText: 'Reset',
       okButtonProps: { danger: true },
       cancelText: 'Hủy',
