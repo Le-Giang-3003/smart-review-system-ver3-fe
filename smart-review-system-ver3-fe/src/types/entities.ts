@@ -113,6 +113,7 @@ export interface GroupListItem {
   topicTitleEn?: string | null
   leaderName: string
   memberCount: number
+  semesterName: string
 }
 
 /** Chi tiết nhóm (`GroupDetailDto` BE) */

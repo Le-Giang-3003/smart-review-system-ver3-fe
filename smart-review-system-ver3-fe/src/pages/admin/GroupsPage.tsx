@@ -23,11 +23,17 @@ export const GroupsPage = () => {
   const filteredGroups = groups.filter((g: GroupListItem) =>
     g.groupName.toLowerCase().includes(searchText.toLowerCase()) ||
     (g.topicTitleEn && g.topicTitleEn.toLowerCase().includes(searchText.toLowerCase())) ||
-    (g.leaderName && g.leaderName.toLowerCase().includes(searchText.toLowerCase()))
+    (g.leaderName && g.leaderName.toLowerCase().includes(searchText.toLowerCase())) ||
+    (g.semesterName && g.semesterName.toLowerCase().includes(searchText.toLowerCase()))
   )
 
   const columns = [
     { title: 'Tên nhóm', dataIndex: 'groupName' },
+    {
+      title: 'Học kỳ',
+      dataIndex: 'semesterName',
+      render: (v: string | undefined) => v || '—',
+    },
     { title: 'Trưởng nhóm', dataIndex: 'leaderName' },
     {
       title: 'Đề tài (EN)',
