@@ -14,7 +14,9 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'https://localhost:7061',
+        // Khớp `dotnet run` mặc định (launch profile "http" → :5221). Profile "https" cũng mở :5221.
+        // Nếu chỉ chạy HTTPS trên :7061, đổi target thành https://localhost:7061 (secure: false).
+        target: 'http://localhost:5221',
         changeOrigin: true,
         secure: false,
       },
