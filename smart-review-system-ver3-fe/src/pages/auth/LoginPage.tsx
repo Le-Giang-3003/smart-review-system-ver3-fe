@@ -39,7 +39,7 @@ export const LoginPage = () => {
     onSuccess: (response) => {
       const loginData = response.data
       if (isApiSuccess(response) && loginData) {
-        setAuth(loginData.accessToken, loginData.refreshToken, loginData.user)
+        setAuth(loginData.accessToken, loginData.user)
         message.success('Đăng nhập thành công')
 
         if (loginData.user.forceChangePassword) {

@@ -10,20 +10,6 @@ export const apiClient = axios.create({
   },
 })
 
-let isRefreshing = false
-let failedQueue: { resolve: (token: string) => void; reject: (error: unknown) => void }[] = []
-
-const processQueue = (error: unknown, token: string | null = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error)
-    } else {
-      prom.resolve(token!)
-    }
-  })
-  failedQueue = []
-}
-
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem(STORAGE_KEYS.TOKEN)
@@ -38,56 +24,9 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as typeof error.config & { _retry?: boolean }
-
-    if (error.response?.status === 401 && !originalRequest?._retry) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({
-            resolve: (token: string) => {
-              if (originalRequest) {
-                originalRequest.headers.Authorization = `Bearer ${token}`
-                resolve(apiClient(originalRequest))
-              }
-            },
-            reject,
-          })
-        })
-      }
-
-      originalRequest!._retry = true
-      isRefreshing = true
-
-      const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)
-      if (!refreshToken) {
-        isRefreshing = false
-        forceLogout()
-        return Promise.reject(error)
-      }
-
-      try {
-        const response = await axios.post(`${baseURL}/auth/refresh-token`, {
-          refreshToken,
-        })
-        const { accessToken, refreshToken: newRefreshToken } = response.data.data
-        localStorage.setItem(STORAGE_KEYS.TOKEN, accessToken)
-        if (newRefreshToken) {
-          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken)
-        }
-        processQueue(null, accessToken)
-        if (originalRequest) {
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`
-          return apiClient(originalRequest)
-        }
-      } catch (refreshError) {
-        processQueue(refreshError, null)
-        forceLogout()
-        return Promise.reject(refreshError)
-      } finally {
-        isRefreshing = false
-      }
+    if (error.response?.status === 401) {
+      forceLogout()
     }
-
     return Promise.reject(error)
   }
 )

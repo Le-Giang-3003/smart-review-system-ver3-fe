@@ -47,7 +47,7 @@ export interface Lecturer {
   department?: string
   minTopics: number
   maxTopics: number
-  expertises: string[]
+  expertises?: string[]
   createdAt: string
   updatedAt?: string
 }
@@ -104,10 +104,62 @@ export interface Group {
   updatedAt?: string
 }
 
+/** Danh sách nhóm (`GroupListDto` BE) */
+export interface GroupListItem {
+  id: number
+  groupName: string
+  status: string
+  topicCode?: string | null
+  topicTitleEn?: string | null
+  leaderName: string
+  memberCount: number
+}
+
+/** Chi tiết nhóm (`GroupDetailDto` BE) */
+export interface GroupDetail {
+  id: number
+  groupName: string
+  status: string
+  semesterId: number
+  semesterCode: string
+  topicId?: number | null
+  topicCode?: string | null
+  topicTitleEn?: string | null
+  topicTitleVi?: string | null
+  supervisor1Name?: string | null
+  supervisor2Name?: string | null
+  leaderId: number
+  leaderName: string
+  members: Array<{
+    id: number
+    fullName: string
+    studentCode: string
+    email: string
+    phone?: string | null
+    isLeader: boolean
+  }>
+  createdAt: string
+  updatedAt?: string | null
+}
+
 export interface TopicKeyword {
   id: number
   topicId: number
   keyword: string
+}
+
+/** Hàng trong danh sách đề tài (`TopicListDto` BE) */
+export interface TopicListItem {
+  id: number
+  topicCode: string
+  titleEn: string
+  titleVi: string
+  supervisor1Name: string
+  supervisor1Id: number
+  supervisor2Name?: string | null
+  supervisor2Id?: number | null
+  groupName?: string | null
+  groupId?: number | null
 }
 
 export interface Topic {
@@ -129,14 +181,39 @@ export interface ReviewPeriod {
   semesterId: number
   semesterCode?: string
   semesterName?: string
-  /** BE có thể trả số (POST) hoặc chuỗi như "Round1" (GET) */
-  round: number | string
+  /** BE dùng `order` (thứ tự đợt trong học kỳ) */
+  order?: number
+  /** @deprecated ưu tiên `order` */
+  round?: number | string
   status: ReviewPeriodStatus | number | string
   startDate: string
   endDate: string
   slotCount?: number
-  createdAt: string
+  createdAt?: string
   updatedAt?: string
+}
+
+export interface ReviewSlotSummary {
+  id: number
+  date: string
+  startTime: string
+  endTime: string
+  room?: string | null
+  maxGroups: number
+}
+
+export interface ReviewPeriodDetailDto {
+  id: number
+  name: string
+  order: number
+  status: string
+  startDate: string
+  endDate: string
+  semesterId: number
+  semesterCode: string
+  slots: ReviewSlotSummary[]
+  createdAt: string
+  updatedAt?: string | null
 }
 
 export interface ReviewSlot {
@@ -207,15 +284,108 @@ export interface SchedulingAssignment extends CouncilDetail {
   score?: number
 }
 
-export interface SchedulingResult {
-  totalSlots: number
-  scheduledSlots: number
-  unschedulableSlots: number
-  assignments: SchedulingAssignment[]
-  unschedulableReasons: string[]
+/** `CouncilAssignmentDto` trong `SchedulingResultDto` BE */
+export interface CouncilAssignmentSummaryDto {
+  councilId: number
+  slotId: number
+  date: string
+  startTime: string
+  endTime: string
+  room?: string | null
+  reviewer1: string
+  reviewer2: string
+  assignedGroups: string[]
+  score: number
 }
 
-export interface ScheduleResult extends SchedulingResult {}
+export interface UnscheduledSlotReason {
+  slotId: number
+  date: string
+  room?: string | null
+  reason: string
+}
+
+/** `SchedulingResultDto` BE */
+export interface SchedulingResultDto {
+  totalSlots: number
+  scheduledSlots: number
+  unscheduledSlots: number
+  councils: CouncilAssignmentSummaryDto[]
+  unscheduledReasons: UnscheduledSlotReason[]
+}
+
+/** Alias cũ */
+export type SchedulingResult = SchedulingResultDto
+
+export interface SlotPreferenceItem {
+  reviewSlotId: number
+  priority: number
+}
+
+export interface ReviewAssignmentDto {
+  id: number
+  councilId: number
+  groupId: number
+  groupName: string
+  topicCode?: string | null
+  topicTitleEn?: string | null
+  reviewComment?: string | null
+  createdAt: string
+  updatedAt?: string | null
+}
+
+export interface CouncilListItem {
+  councilId: number
+  slotId: number
+  date: string
+  startTime: string
+  endTime: string
+  room?: string | null
+  dayOfWeek: string
+  members: Array<{
+    lecturerId: number
+    fullName: string
+    email: string
+    isChairman: boolean
+  }>
+  groups: Array<{
+    groupId: number
+    groupName: string
+    topicCode?: string | null
+    topicTitleEn?: string | null
+    assignmentId: number
+    hasComment: boolean
+  }>
+}
+
+export interface MyLecturerScheduleDto {
+  reviewPeriodId: number
+  reviewPeriodName: string
+  councils: CouncilListItem[]
+}
+
+export interface GroupReviewItemDto {
+  assignmentId: number
+  councilId: number
+  date: string
+  startTime: string
+  endTime: string
+  room?: string | null
+  reviewers: Array<{
+    lecturerId: number
+    fullName: string
+    email: string
+    isChairman: boolean
+  }>
+  reviewComment?: string | null
+}
+
+export interface MyGroupScheduleDto {
+  reviewPeriodId: number
+  reviewPeriodName: string
+  groupName: string
+  reviews: GroupReviewItemDto[]
+}
 
 export interface UserListItem {
   id: number
@@ -257,77 +427,53 @@ export interface UserDetail {
   updatedAt?: string | null
 }
 
-export interface AdminDashboardWorkloadDistribution {
-  lecturersAtMin: number
-  lecturersBetween: number
-  lecturersNearMax: number
-  lecturersOverMax: number
-}
-
-/** Tóm tắt đợt review trên dashboard admin (BE) */
+/** `PeriodStatusDto` từ BE */
 export interface AdminDashboardReviewPeriod {
   id: number
   name: string
-  round: string | number
-  status: string | number
+  order: number
+  status: string
   slotCount: number
+  councilCount: number
+  assignmentCount: number
 }
 
+/** `AdminDashboardDto` BE — activeSemester là mã học kỳ (string) */
 export interface AdminDashboardDto {
+  activeSemester: string | null
   totalLecturers: number
   totalStudents: number
   totalGroups: number
   totalTopics: number
-  activeSemester?: Pick<Semester, 'id' | 'code' | 'name' | 'isActive'>
   reviewPeriods: AdminDashboardReviewPeriod[]
-  workloadDistribution?: AdminDashboardWorkloadDistribution
-  slotFillRate?: number
 }
 
+/** `LecturerDashboardDto` BE */
 export interface LecturerDashboardDto {
-  lecturerInfo: Lecturer
-  /** Một số bản BE cũ có thể còn trường này */
-  upcomingSlots?: ReviewSlot[]
-  registeredSlots: ReviewSlot[]
-  councilAssignments: CouncilDetail[]
-  totalAssignedGroups: number
-  totalRegisteredSlots: number
+  lecturerName: string
+  totalCouncils: number
+  totalGroupsToReview: number
+  commentsWritten: number
+  commentsPending: number
+  upcomingReviews: UpcomingReviewDto[]
 }
 
-export interface StudentDashboardGroupSummary {
-  id: number
-  groupName: string
-  status: string
-  memberNames: string[]
+/** `StudentDashboardDto` BE */
+export interface StudentDashboardDto {
+  studentName: string
+  groupName: string | null
+  topicCode: string | null
+  topicTitle: string | null
+  upcomingReviews: UpcomingReviewDto[]
 }
 
-export interface StudentDashboardTopicSummary {
-  title: string
-  supervisorName: string
-}
-
-export interface StudentDashboardReviewSchedule {
+export interface UpcomingReviewDto {
+  reviewPeriodId: number
+  reviewPeriodName: string
   date: string
   startTime: string
   endTime: string
-  room?: string
-  councilMembers: string[]
-}
-
-export interface StudentDashboardPendingInvitation {
-  invitationId: number
-  groupName: string
-  createdAt: string
-}
-
-export interface StudentDashboardDto {
-  group?: StudentDashboardGroupSummary | Group | null
-  topic?: StudentDashboardTopicSummary | Topic | null
-  reviewSchedule?: StudentDashboardReviewSchedule | null
-  pendingInvitations?: StudentDashboardPendingInvitation[]
-  /** Tương thích bản BE cũ */
-  studentInfo?: Student
-  upcomingReviews?: ReviewSlot[]
+  room?: string | null
 }
 
 export interface Tag {

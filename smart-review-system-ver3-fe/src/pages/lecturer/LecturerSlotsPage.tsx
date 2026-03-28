@@ -1,78 +1,98 @@
-import { useState } from 'react'
-import { Card, Table, Button, Select, Tag, App, Space, Alert, Empty } from 'antd'
-import {
-  CalendarOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-} from '@ant-design/icons'
+import { useMemo, useState } from 'react'
+import { Card, Table, Button, Select, App, Space, Alert, Empty, Form } from 'antd'
+import { CalendarOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { lecturerApiService } from '@/api/lecturer.service'
-import { reviewPeriodService } from '@/api/admin.service'
+import { reviewPeriodService, semesterService } from '@/api/admin.service'
+import type { ReviewPeriod } from '@/types/entities'
 import { PageWrapper } from '@/components/common/PageWrapper'
 import { formatDate, formatTime } from '@/utils/format'
-import type { ReviewSlot } from '@/types/entities'
+import type { ReviewSlot, SlotPreferenceItem } from '@/types/entities'
+import { extractListFromApiData } from '@/utils/api'
+import { isApiSuccess } from '@/types/api'
 
 export const LecturerSlotsPage = () => {
+  const [semesterId, setSemesterId] = useState<number | undefined>()
   const [selectedPeriodId, setSelectedPeriodId] = useState<number | undefined>()
+  const [p1, setP1] = useState<number | undefined>()
+  const [p2, setP2] = useState<number | undefined>()
+  const [p3, setP3] = useState<number | undefined>()
+  const [p4, setP4] = useState<number | undefined>()
+  const [p5, setP5] = useState<number | undefined>()
   const queryClient = useQueryClient()
   const { message } = App.useApp()
 
-  const {
-    data: lecturerDashboard,
-    isLoading: lecturerDashboardLoading,
-    error: lecturerDashboardError,
-  } = useQuery({
-    queryKey: ['lecturer-dashboard'],
+  const { data: semesters = [] } = useQuery({
+    queryKey: ['semesters'],
     queryFn: async () => {
-      const res = await lecturerApiService.getDashboard()
-      return res.data.data
+      const res = await semesterService.getAll()
+      return res.data.data ?? []
     },
   })
 
-  const { data: periods = [] } = useQuery({
-    queryKey: ['review-periods-lecturer'],
+  const { data: periods = [] } = useQuery<ReviewPeriod[]>({
+    queryKey: ['review-periods', semesterId],
     queryFn: async () => {
-      const res = await reviewPeriodService.getAll()
-      return res.data.data ?? []
+      if (!semesterId) return []
+      const res = await reviewPeriodService.getBySemester(semesterId)
+      return extractListFromApiData<ReviewPeriod>(res.data?.data)
     },
+    enabled: !!semesterId,
   })
 
   const { data: slots = [], isLoading: slotsLoading } = useQuery({
-    queryKey: ['lecturer-available-slots', selectedPeriodId],
+    queryKey: ['lecturer-slots', selectedPeriodId],
     queryFn: async () => {
       if (!selectedPeriodId) return []
-      const res = await lecturerApiService.getAvailableSlots(selectedPeriodId)
-      return res.data.data ?? []
+      const res = await lecturerApiService.getSlotsForPeriod(selectedPeriodId)
+      return extractListFromApiData<ReviewSlot>(res.data?.data)
     },
     enabled: !!selectedPeriodId,
   })
 
-  const registerMutation = useMutation({
-    mutationFn: lecturerApiService.registerForSlot,
-    onSuccess: async () => {
-      message.success('Đăng ký slot thành công')
-      await queryClient.refetchQueries({ queryKey: ['lecturer-available-slots'] })
-      queryClient.invalidateQueries({ queryKey: ['lecturer-dashboard'] })
+  const slotOptions = useMemo(
+    () => slots.map((s) => ({ label: `${formatDate(s.date)} ${formatTime(s.startTime)}–${formatTime(s.endTime)}`, value: s.id })),
+    [slots]
+  )
+
+  const saveMutation = useMutation({
+    mutationFn: async (prefs: SlotPreferenceItem[]) => {
+      const res = await lecturerApiService.registerLecturerPreferences(selectedPeriodId!, prefs)
+      return res.data
     },
-    onError: (error: any) => {
-      message.error(error.response?.data?.message || 'Đăng ký thất bại')
+    onSuccess: (res) => {
+      if (isApiSuccess(res)) {
+        message.success('Đã lưu 5 lựa chọn ưu tiên slot')
+      } else {
+        message.error(res.message || 'Lưu thất bại')
+      }
+      queryClient.invalidateQueries({ queryKey: ['lecturer-slots'] })
     },
+    onError: (e: any) => message.error(e.response?.data?.message || 'Lưu thất bại'),
   })
 
-  const unregisterMutation = useMutation({
-    mutationFn: lecturerApiService.unregisterFromSlot,
-    onSuccess: async () => {
-      message.success('Hủy đăng ký thành công')
-      await queryClient.refetchQueries({ queryKey: ['lecturer-available-slots'] })
-      queryClient.invalidateQueries({ queryKey: ['lecturer-dashboard'] })
-    },
-    onError: (error: any) => {
-      message.error(error.response?.data?.message || 'Hủy đăng ký thất bại')
-    },
-  })
-
-  const isRegistered = (slot: ReviewSlot) => {
-    return slot.isCurrentUserRegistered === true
+  const onSavePreferences = () => {
+    if (!selectedPeriodId) {
+      message.warning('Chọn đợt review')
+      return
+    }
+    const ids = [p1, p2, p3, p4, p5]
+    if (ids.some((x) => x == null)) {
+      message.warning('Chọn đủ 5 slot khác nhau (mức ưu tiên 1–5)')
+      return
+    }
+    if (new Set(ids).size !== 5) {
+      message.warning('Không được trùng slot')
+      return
+    }
+    const prefs: SlotPreferenceItem[] = [
+      { reviewSlotId: p1!, priority: 1 },
+      { reviewSlotId: p2!, priority: 2 },
+      { reviewSlotId: p3!, priority: 3 },
+      { reviewSlotId: p4!, priority: 4 },
+      { reviewSlotId: p5!, priority: 5 },
+    ]
+    saveMutation.mutate(prefs)
   }
 
   const columns = [
@@ -85,136 +105,86 @@ export const LecturerSlotsPage = () => {
           {formatDate(d)}
         </Space>
       ),
-      sorter: (a: ReviewSlot, b: ReviewSlot) =>
-        new Date(a.date).getTime() - new Date(b.date).getTime(),
     },
     {
       title: 'Thời gian',
-      render: (_: unknown, r: ReviewSlot) =>
-        `${formatTime(r.startTime)} - ${formatTime(r.endTime)}`,
+      render: (_: unknown, r: ReviewSlot) => `${formatTime(r.startTime)} - ${formatTime(r.endTime)}`,
     },
     {
       title: 'Phòng',
       dataIndex: 'room',
-      render: (room?: string) => room || <Tag color="default">Chưa xếp</Tag>,
+      render: (room?: string) => room || '—',
     },
-    {
-      title: 'Nhóm tối đa',
-      dataIndex: 'maxGroups',
-      align: 'center' as const,
-    },
-    {
-      title: 'GV đã đăng ký',
-      dataIndex: 'registeredLecturers',
-      align: 'center' as const,
-      render: (count?: number) => count ?? 0,
-    },
-    {
-      title: 'Trạng thái',
-      render: (_: unknown, slot: ReviewSlot) =>
-        isRegistered(slot) ? (
-          <Tag color="success" icon={<CheckCircleOutlined />}>
-            Đã đăng ký
-          </Tag>
-        ) : (
-          <Tag color="default">Chưa đăng ký</Tag>
-        ),
-    },
-    {
-      title: 'Thao tác',
-      render: (_: unknown, slot: ReviewSlot) =>
-        isRegistered(slot) ? (
-          <Button
-            danger
-            size="small"
-            icon={<CloseCircleOutlined />}
-            loading={unregisterMutation.isPending}
-            onClick={() => unregisterMutation.mutate(slot.id)}
-          >
-            Hủy đăng ký
-          </Button>
-        ) : (
-          <Button
-            type="primary"
-            size="small"
-            icon={<CheckCircleOutlined />}
-            loading={registerMutation.isPending}
-            onClick={() => registerMutation.mutate(slot.id)}
-          >
-            Đăng ký
-          </Button>
-        ),
-    },
+    { title: 'Max nhóm', dataIndex: 'maxGroups', align: 'center' as const },
   ]
 
   return (
     <PageWrapper
-      title="Đăng ký slot review"
-      subtitle="Chọn đợt review và đăng ký các slot bạn có thể tham gia"
+      title="Đăng ký ưu tiên slot"
+      subtitle="Backend yêu cầu đúng 5 slot xếp theo mức ưu tiên 1 (cao nhất) đến 5"
     >
-      {lecturerDashboardError && (
-        <Alert
-          message="Không thể tải chuyên môn"
-          description="Vui lòng thử lại sau hoặc liên hệ quản trị viên."
-          type="warning"
-          showIcon
-          style={{ marginBottom: 16 }}
-        />
-      )}
-
-      {!lecturerDashboardLoading && lecturerDashboard?.lecturerInfo?.expertises?.length ? (
-        <Card style={{ marginBottom: 16 }}>
-          <div style={{ marginBottom: 8, fontWeight: 600, color: '#44403C' }}>
-            Chuyên môn của bạn
-          </div>
-          <Space wrap>
-            {lecturerDashboard.lecturerInfo.expertises.map((exp: string, idx: number) => (
-              <Tag key={idx} color="orange">
-                {exp}
-              </Tag>
-            ))}
-          </Space>
-        </Card>
-      ) : null}
-
-      <Card>
-        <div style={{ marginBottom: 20, display: 'flex', gap: 16, alignItems: 'center' }}>
+      <Card style={{ marginBottom: 16 }}>
+        <Space wrap>
           <Select
-            placeholder="Chọn đợt review"
-            style={{ width: 320 }}
+            placeholder="Học kỳ"
+            style={{ width: 200 }}
+            value={semesterId}
+            onChange={(v) => {
+              setSemesterId(v)
+              setSelectedPeriodId(undefined)
+            }}
+            options={semesters.map((s: { id: number; code: string; name: string }) => ({
+              label: `${s.code} — ${s.name}`,
+              value: s.id,
+            }))}
+          />
+          <Select
+            placeholder="Đợt review"
+            style={{ width: 280 }}
             value={selectedPeriodId}
             onChange={setSelectedPeriodId}
-            options={periods.map((p) => ({
-              label: `${p.name} (${p.semesterCode || ''})`,
-              value: p.id,
-            }))}
-            allowClear
+            options={periods.map((p: { id: number; name: string }) => ({ label: p.name, value: p.id }))}
           />
-        </div>
-
-        {!selectedPeriodId && (
-          <Alert
-            message="Vui lòng chọn đợt review để xem các slot khả dụng"
-            type="info"
-            showIcon
-            style={{ marginBottom: 16 }}
-          />
-        )}
-
-        {selectedPeriodId && slots.length === 0 && !slotsLoading && (
-          <Empty description="Chưa có slot nào trong đợt review này" />
-        )}
-
-        {selectedPeriodId && (
-          <Table
-            columns={columns}
-            dataSource={slots}
-            rowKey="id"
-            loading={slotsLoading}
-            pagination={{ pageSize: 10 }}
-          />
-        )}
+        </Space>
       </Card>
+
+      {!selectedPeriodId && (
+        <Alert type="info" showIcon message="Chọn học kỳ và đợt review để xem slot và đăng ký ưu tiên." />
+      )}
+
+      {selectedPeriodId && (
+        <>
+          <Card title="Danh sách slot" style={{ marginBottom: 16 }}>
+            {slots.length === 0 && !slotsLoading ? (
+              <Empty />
+            ) : (
+              <Table columns={columns} dataSource={slots} rowKey="id" loading={slotsLoading} pagination={false} />
+            )}
+          </Card>
+          <Card title="Chọn 5 ưu tiên">
+            <Form layout="vertical">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <Form.Item key={n} label={`Ưu tiên ${n}`}>
+                  <Select
+                    allowClear
+                    placeholder={`Slot cho mức ${n}`}
+                    options={slotOptions}
+                    style={{ width: '100%', maxWidth: 480 }}
+                    value={[p1, p2, p3, p4, p5][n - 1]}
+                    onChange={(v) => {
+                      const setters = [setP1, setP2, setP3, setP4, setP5]
+                      setters[n - 1](v ?? undefined)
+                    }}
+                  />
+                </Form.Item>
+              ))}
+              <Button type="primary" onClick={onSavePreferences} loading={saveMutation.isPending}>
+                Gửi đăng ký ưu tiên
+              </Button>
+            </Form>
+          </Card>
+        </>
+      )}
     </PageWrapper>
   )
 }

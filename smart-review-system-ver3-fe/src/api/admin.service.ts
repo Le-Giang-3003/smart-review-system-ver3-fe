@@ -1,144 +1,170 @@
 import { apiClient } from './client'
-import type { ApiResponse, ImportResultDto } from '@/types/api'
+import type { ApiResponse, ImportResultDto, LecturerStudentImportResultDto, PagedResult } from '@/types/api'
 import type {
   Semester,
   ReviewPeriod,
+  ReviewPeriodDetailDto,
   ReviewSlot,
-  Topic,
+  TopicListItem,
   Lecturer,
   LecturerSemesterLoad,
   Student,
-  Group,
   UserDetail,
   AdminDashboardDto,
-  SchedulingResult,
-  CouncilDetail,
-  Tag,
-  ReviewSession,
-  Checklist,
+  CouncilListItem,
+  SchedulingResultDto,
+  ReviewAssignmentDto,
+  GroupListItem,
+  GroupDetail,
 } from '@/types/entities'
 
 export const semesterService = {
-  getAll: () => apiClient.get<ApiResponse<Semester[]>>('/Semesters'),
-  getById: (id: number) => apiClient.get<ApiResponse<Semester>>(`/Semesters/${id}`),
-  getActive: () => apiClient.get<ApiResponse<Semester>>('/Semesters/active'),
+  getAll: () => apiClient.get<ApiResponse<Semester[]>>('/semesters'),
+  getById: (id: number) => apiClient.get<ApiResponse<Semester>>(`/semesters/${id}`),
+  getActive: () => apiClient.get<ApiResponse<Semester>>('/semesters/active'),
   create: (data: { code: string; name: string; startDate: string; endDate: string }) =>
-    apiClient.post<ApiResponse<Semester>>('/Semesters', data),
+    apiClient.post<ApiResponse<Semester>>('/semesters', data),
   update: (id: number, data: { code: string; name: string; startDate: string; endDate: string }) =>
-    apiClient.put<ApiResponse<Semester>>(`/Semesters/${id}`, data),
-  delete: (id: number) => apiClient.delete<ApiResponse<null>>(`/Semesters/${id}`),
+    apiClient.put<ApiResponse<Semester>>(`/semesters/${id}`, data),
+  delete: (id: number) => apiClient.delete<ApiResponse<null>>(`/semesters/${id}`),
   activate: (id: number, activate = true) =>
-    apiClient.patch<ApiResponse<null>>(`/Semesters/${id}/activate`, null, {
+    apiClient.patch<ApiResponse<null>>(`/semesters/${id}/activate`, null, {
       params: { activate },
     }),
+  importLecturers: (semesterId: number, file: File) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return apiClient.post<ApiResponse<ImportResultDto>>(`/semesters/${semesterId}/import-lecturers`, fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
+  importCapstone: (semesterId: number, file: File) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return apiClient.post<ApiResponse<ImportResultDto>>(`/semesters/${semesterId}/import`, fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
+  exportExcel: (semesterId: number) =>
+    apiClient.get<Blob>(`/semesters/${semesterId}/export`, { responseType: 'blob' }),
 }
 
 export const reviewPeriodService = {
-  getAll: (semesterId?: number) =>
-    apiClient.get<ApiResponse<ReviewPeriod[]>>('/ReviewPeriods', { params: { semesterId } }),
-  getById: (id: number) => apiClient.get<ApiResponse<ReviewPeriod>>(`/ReviewPeriods/${id}`),
-  create: (data: Record<string, unknown>) =>
-    apiClient.post<ApiResponse<ReviewPeriod>>('/ReviewPeriods', data),
-  update: (id: number, data: Record<string, unknown>) =>
-    apiClient.put<ApiResponse<ReviewPeriod>>(`/ReviewPeriods/${id}`, data),
-  delete: (id: number) => apiClient.delete<ApiResponse<null>>(`/ReviewPeriods/${id}`),
-  transitionStatus: (id: number, targetStatus: number) =>
-    apiClient.patch<ApiResponse<ReviewPeriod>>(`/ReviewPeriods/${id}/transition`, {
-      targetStatus,
-    }),
+  getBySemester: (
+    semesterId: number,
+    params?: { search?: string; pageNumber?: number; pageSize?: number }
+  ) => apiClient.get<ApiResponse<PagedResult<ReviewPeriod>>>(`/review-periods/by-semester/${semesterId}`, { params }),
+  getById: (id: number) =>
+    apiClient.get<ApiResponse<ReviewPeriodDetailDto>>(`/review-periods/${id}`),
+  create: (data: {
+    semesterId: number
+    name: string
+    order: number
+    startDate: string
+    endDate: string
+  }) => apiClient.post<ApiResponse<ReviewPeriod>>('/review-periods', data),
+  update: (id: number, data: { id: number; name: string; startDate: string; endDate: string }) =>
+    apiClient.put<ApiResponse<ReviewPeriod>>(`/review-periods/${id}`, data),
+  transitionStatus: (id: number, targetStatus: string) =>
+    apiClient.patch<ApiResponse<null>>(`/review-periods/${id}/status`, { targetStatus }),
 }
 
 export const reviewSlotService = {
-  getAll: (reviewPeriodId?: number) =>
-    apiClient.get<ApiResponse<ReviewSlot[]>>('/ReviewSlots', { params: { reviewPeriodId } }),
-  getById: (id: number) => apiClient.get<ApiResponse<ReviewSlot>>(`/ReviewSlots/${id}`),
-  create: (data: Record<string, unknown>) =>
-    apiClient.post<ApiResponse<ReviewSlot>>('/ReviewSlots', data),
-  update: (id: number, data: Record<string, unknown>) =>
-    apiClient.put<ApiResponse<ReviewSlot>>(`/ReviewSlots/${id}`, data),
-  delete: (id: number) => apiClient.delete<ApiResponse<null>>(`/ReviewSlots/${id}`),
-  cancel: (id: number) => apiClient.post<ApiResponse<ReviewSlot>>(`/ReviewSlots/${id}/cancel`),
+  getByPeriod: (
+    reviewPeriodId: number,
+    params?: {
+      filterDate?: string
+      sortBy?: string
+      sortOrder?: string
+      pageNumber?: number
+      pageSize?: number
+    }
+  ) =>
+    apiClient.get<ApiResponse<PagedResult<ReviewSlot>>>(`/review-slots/by-period/${reviewPeriodId}`, { params }),
+  getById: (id: number) => apiClient.get<ApiResponse<ReviewSlot>>(`/review-slots/${id}`),
+  create: (data: {
+    reviewPeriodId: number
+    date: string
+    startTime: string
+    endTime: string
+    room?: string
+    maxGroups?: number
+  }) => apiClient.post<ApiResponse<ReviewSlot>>('/review-slots', data),
+  createBatch: (data: { reviewPeriodId: number; slots: Array<Record<string, unknown>> }) =>
+    apiClient.post<ApiResponse<unknown>>('/review-slots/batch', data),
+  update: (
+    id: number,
+    data: { id: number; date: string; startTime: string; endTime: string; room?: string; maxGroups: number }
+  ) => apiClient.put<ApiResponse<ReviewSlot>>(`/review-slots/${id}`, data),
+  delete: (id: number) => apiClient.delete<ApiResponse<null>>(`/review-slots/${id}`),
 }
 
 export const topicService = {
-  getAll: (search?: string) =>
-    apiClient.get<ApiResponse<Topic[]>>('/Topics', { params: { search } }),
-  getById: (id: number) => apiClient.get<ApiResponse<Topic>>(`/Topics/${id}`),
-  create: (data: Record<string, unknown>) =>
-    apiClient.post<ApiResponse<Topic>>('/Topics', data),
-  update: (id: number, data: Record<string, unknown>) =>
-    apiClient.put<ApiResponse<Topic>>(`/Topics/${id}`, data),
-  delete: (id: number) => apiClient.delete<ApiResponse<null>>(`/Topics/${id}`),
-  updateKeywords: (id: number, keywords: string[]) =>
-    apiClient.put<ApiResponse<null>>(`/Topics/${id}/keywords`, { keywords }),
-  assignTags: (id: number, keywords: string[]) =>
-    apiClient.put<ApiResponse<null>>(`/Topics/${id}/keywords`, { keywords }),
+  getAll: (params?: {
+    search?: string
+    sortBy?: string
+    sortOrder?: string
+    pageNumber?: number
+    pageSize?: number
+  }) => apiClient.get<ApiResponse<PagedResult<TopicListItem>>>('/topics', { params }),
+  getById: (id: number) => apiClient.get<ApiResponse<unknown>>(`/topics/${id}`),
 }
 
 export const groupService = {
-  getAll: (search?: string) =>
-    apiClient.get<ApiResponse<Group[]>>('/Groups', { params: { search } }),
-  getById: (id: number) => apiClient.get<ApiResponse<Group>>(`/Groups/${id}`),
-  create: (data: Record<string, unknown>) =>
-    apiClient.post<ApiResponse<Group>>('/Groups', data),
-  /** @deprecated BE chưa hỗ trợ - xem API_SUPPORT.groups.update */
-  update: (id: number, data: Record<string, unknown>) =>
-    apiClient.put<ApiResponse<Group>>(`/Groups/${id}`, data),
-  /** @deprecated BE chưa hỗ trợ - xem API_SUPPORT.groups.delete */
-  delete: (id: number) => apiClient.delete<ApiResponse<null>>(`/Groups/${id}`),
+  getAll: (params?: {
+    search?: string
+    semesterId?: number
+    sortBy?: string
+    sortOrder?: string
+    pageNumber?: number
+    pageSize?: number
+  }) => apiClient.get<ApiResponse<PagedResult<GroupListItem>>>('/groups', { params }),
+  getById: (id: number) => apiClient.get<ApiResponse<GroupDetail>>(`/groups/${id}`),
 }
 
 export const lecturerService = {
   getAll: (search?: string, department?: string, page = 1, pageSize = 20) =>
-    apiClient.get<ApiResponse<any>>('/Lecturers', {
+    apiClient.get<ApiResponse<PagedResult<Lecturer>>>('/lecturers', {
       params: { search, department, page, pageSize },
     }),
-  getById: (id: number) => apiClient.get<ApiResponse<Lecturer>>(`/Lecturers/${id}`),
-  create: (data: Record<string, unknown>) =>
-    apiClient.post<ApiResponse<Lecturer>>('/Lecturers', data),
+  getById: (id: number) => apiClient.get<ApiResponse<Lecturer>>(`/lecturers/${id}`),
+  create: (data: Record<string, unknown>) => apiClient.post<ApiResponse<Lecturer>>('/lecturers', data),
   update: (id: number, data: Record<string, unknown>) =>
-    apiClient.put<ApiResponse<Lecturer>>(`/Lecturers/${id}`, data),
-  delete: (id: number) => apiClient.delete<ApiResponse<null>>(`/Lecturers/${id}`),
-  upsertExpertise: (id: number, keywords: string[]) =>
-    apiClient.put<ApiResponse<null>>(`/Lecturers/${id}/expertises`, { keywords }),
-  updateExpertises: (id: number, keywords: string[]) =>
-    apiClient.put<ApiResponse<null>>(`/Lecturers/${id}/expertises`, { keywords }),
+    apiClient.put<ApiResponse<Lecturer>>(`/lecturers/${id}`, data),
+  delete: (id: number) => apiClient.delete<ApiResponse<null>>(`/lecturers/${id}`),
   batchUpdateWorkload: (lecturerIds: number[], minTopics: number, maxTopics: number) =>
-    apiClient.put<ApiResponse<any>>('/Lecturers/batch-workload', {
+    apiClient.put<ApiResponse<unknown>>('/lecturers/batch-workload', {
       lecturerIds,
       minTopics,
       maxTopics,
     }),
   getSemesterLoads: (semesterId: number, onlyOverloaded?: boolean) =>
-    apiClient.get<ApiResponse<LecturerSemesterLoad[]>>('/Lecturers/semester-loads', {
+    apiClient.get<ApiResponse<LecturerSemesterLoad[]>>('/lecturers/semester-loads', {
       params: { semesterId, onlyOverloaded },
     }),
   import: (file: File) => {
     const formData = new FormData()
     formData.append('file', file)
-    return apiClient.post<ApiResponse<ImportResultDto>>('/Lecturers/import', formData, {
+    return apiClient.post<ApiResponse<LecturerStudentImportResultDto>>('/lecturers/import', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
   },
-  upsertCompatibility: (lecturerAId: number, lecturerBId: number, level: string) =>
-    apiClient.put<ApiResponse<any>>('/Lecturers/compatibility', { lecturerAId, lecturerBId, level }),
 }
 
 export const studentService = {
   getAll: (search?: string, page = 1, pageSize = 20) =>
-    apiClient.get<ApiResponse<any>>('/Students', {
+    apiClient.get<ApiResponse<PagedResult<Student>>>('/students', {
       params: { search, page, pageSize },
     }),
-  getById: (id: number) => apiClient.get<ApiResponse<Student>>(`/Students/${id}`),
-  create: (data: Record<string, unknown>) =>
-    apiClient.post<ApiResponse<Student>>('/Students', data),
+  getById: (id: number) => apiClient.get<ApiResponse<Student>>(`/students/${id}`),
+  create: (data: Record<string, unknown>) => apiClient.post<ApiResponse<Student>>('/students', data),
   update: (id: number, data: Record<string, unknown>) =>
-    apiClient.put<ApiResponse<Student>>(`/Students/${id}`, data),
-  delete: (id: number) => apiClient.delete<ApiResponse<null>>(`/Students/${id}`),
+    apiClient.put<ApiResponse<Student>>(`/students/${id}`, data),
+  delete: (id: number) => apiClient.delete<ApiResponse<null>>(`/students/${id}`),
   import: (file: File) => {
     const formData = new FormData()
     formData.append('file', file)
-    return apiClient.post<ApiResponse<ImportResultDto>>('/Students/import', formData, {
+    return apiClient.post<ApiResponse<LecturerStudentImportResultDto>>('/students/import', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
   },
@@ -153,86 +179,38 @@ export const userService = {
     sortDesc?: boolean
     page?: number
     pageSize?: number
-  }) =>
-    apiClient.get<ApiResponse<any>>('/Users', { params }),
-  getById: (id: number) => apiClient.get<ApiResponse<UserDetail>>(`/Users/${id}`),
+  }) => apiClient.get<ApiResponse<unknown>>('/users', { params }),
+  getById: (id: number) => apiClient.get<ApiResponse<UserDetail>>(`/users/${id}`),
 }
 
 export const councilService = {
-  getBySlot: (reviewSlotId: number) =>
-    apiClient.get<ApiResponse<CouncilDetail>>(`/Councils/by-slot/${reviewSlotId}`),
-  assignChairman: (councilId: number, lecturerId: number) =>
-    apiClient.post<ApiResponse<null>>(`/Councils/${councilId}/assign-chairman`, { lecturerId }),
+  getForReviewPeriod: (
+    reviewPeriodId: number,
+    params?: { filterDate?: string; pageNumber?: number; pageSize?: number }
+  ) =>
+    apiClient.get<ApiResponse<PagedResult<CouncilListItem>>>(`/review-periods/${reviewPeriodId}/councils`, {
+      params,
+    }),
+  getDetail: (councilId: number) =>
+    apiClient.get<ApiResponse<unknown>>(`/councils/${councilId}`),
 }
 
 export const schedulingService = {
   run: (reviewPeriodId: number) =>
-    apiClient.post<ApiResponse<SchedulingResult>>(`/Scheduling/run/${reviewPeriodId}`),
+    apiClient.post<ApiResponse<unknown>>(`/scheduling/review-periods/${reviewPeriodId}/run`),
   getResult: (reviewPeriodId: number) =>
-    apiClient.get<ApiResponse<SchedulingResult>>(`/Scheduling/result/${reviewPeriodId}`),
-  updateWeights: (data: { w1: number; w2: number; w3: number; w4: number; w5: number }) =>
-    apiClient.put<ApiResponse<null>>('/Scheduling/weights', data),
-  reset: (reviewPeriodId: number) =>
-    apiClient.post<ApiResponse<null>>(`/Scheduling/reset/${reviewPeriodId}`),
-  manualOverride: (data: {
-    reviewSlotId: number
-    removeLecturerId?: number
-    addLecturerId?: number
-    swapFromLecturerId?: number
-    swapToLecturerId?: number
-  }) => apiClient.post<ApiResponse<null>>('/Scheduling/manual-override', data),
-}
-
-export const checklistService = {
-  getByPeriod: (reviewPeriodId: number) =>
-    apiClient.get<ApiResponse<Checklist>>(`/Checklists/by-period/${reviewPeriodId}`),
-  create: (data: { reviewPeriodId: number; name: string }) =>
-    apiClient.post<ApiResponse<Checklist>>('/Checklists', data),
-  addItem: (
-    checklistId: number,
-    data: { orderNo: number; title: string; description?: string; maxScore?: number }
-  ) => apiClient.post<ApiResponse<unknown>>(`/Checklists/${checklistId}/items`, data),
-  updateItem: (
-    itemId: number,
-    data: { title: string; description?: string; maxScore?: number; orderNo: number }
-  ) => apiClient.put<ApiResponse<unknown>>(`/Checklists/items/${itemId}`, data),
-  deleteItem: (itemId: number) =>
-    apiClient.delete<ApiResponse<unknown>>(`/Checklists/items/${itemId}`),
+    apiClient.get<ApiResponse<SchedulingResultDto>>(`/scheduling/review-periods/${reviewPeriodId}/result`),
 }
 
 export const dashboardService = {
-  getAdminDashboard: () => apiClient.get<ApiResponse<AdminDashboardDto>>('/Dashboard/admin'),
+  getAdminDashboard: () => apiClient.get<ApiResponse<AdminDashboardDto>>('/dashboard/admin'),
 }
 
-export const tagService = {
-  getAll: (isActive?: boolean) =>
-    apiClient.get<ApiResponse<Tag[]>>('/Tags', { params: { isActive } }),
-  getById: (id: number) => apiClient.get<ApiResponse<Tag>>(`/Tags/${id}`),
-  create: (data: { name: string; description?: string }) =>
-    apiClient.post<ApiResponse<Tag>>('/Tags', data),
-  update: (id: number, data: { name: string; description?: string }) =>
-    apiClient.put<ApiResponse<Tag>>(`/Tags/${id}`, data),
-  delete: (id: number) => apiClient.delete<ApiResponse<null>>(`/Tags/${id}`),
-}
-
-export const reviewSessionService = {
-  getAll: (params?: {
-    reviewPeriodId?: number
-    groupId?: number
-    slotId?: number
-    registrationStatus?: number
-  }) => apiClient.get<ApiResponse<ReviewSession[]>>('/ReviewSessions', { params }),
-  getById: (id: number) => apiClient.get<ApiResponse<ReviewSession>>(`/ReviewSessions/${id}`),
-  getScheduled: (reviewPeriodId: number) =>
-    apiClient.get<ApiResponse<ReviewSession[]>>(
-      `/ReviewSessions/scheduled/${reviewPeriodId}`
-    ),
-  approve: (id: number) =>
-    apiClient.post<ApiResponse<ReviewSession>>(`/ReviewSessions/${id}/approve`),
-  reject: (id: number, reason: string) =>
-    apiClient.post<ApiResponse<ReviewSession>>(`/ReviewSessions/${id}/reject`, { reason }),
-  lock: (id: number) =>
-    apiClient.post<ApiResponse<ReviewSession>>(`/ReviewSessions/${id}/lock`),
-  updateStatus: (id: number, status: number) =>
-    apiClient.put<ApiResponse<ReviewSession>>(`/ReviewSessions/${id}/status`, { status }),
+export const reviewAssignmentService = {
+  getById: (id: number) =>
+    apiClient.get<ApiResponse<ReviewAssignmentDto>>(`/review-assignments/${id}`),
+  updateComment: (id: number, comment: string) =>
+    apiClient.put<ApiResponse<null>>(`/review-assignments/${id}/comment`, { comment }),
+  getByCouncil: (councilId: number) =>
+    apiClient.get<ApiResponse<ReviewAssignmentDto[]>>(`/councils/${councilId}/assignments`),
 }

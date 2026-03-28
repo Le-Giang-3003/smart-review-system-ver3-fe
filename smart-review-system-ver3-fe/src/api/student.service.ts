@@ -1,57 +1,41 @@
 import { apiClient } from './client'
-import type { ApiResponse } from '@/types/api'
+import type { ApiResponse, PagedResult } from '@/types/api'
 import type {
   StudentDashboardDto,
-  Group,
-  Topic,
+  TopicListItem,
   ReviewSlot,
+  MyGroupScheduleDto,
+  SlotPreferenceItem,
 } from '@/types/entities'
 
 export const studentApiService = {
   getDashboard: () =>
-    apiClient.get<ApiResponse<StudentDashboardDto>>('/Dashboard/student'),
+    apiClient.get<ApiResponse<StudentDashboardDto>>('/dashboard/student'),
 
-  // Groups
-  getMyGroup: () =>
-    apiClient.get<ApiResponse<Group[]>>('/Groups'),
+  getTopics: (params?: { search?: string; pageNumber?: number; pageSize?: number }) =>
+    apiClient.get<ApiResponse<PagedResult<TopicListItem>>>('/topics', { params }),
 
-  createGroup: (groupName: string) =>
-    apiClient.post<ApiResponse<Group>>('/Groups', { groupName }),
+  getSlotsForPeriod: (reviewPeriodId: number, params?: { pageNumber?: number; pageSize?: number }) =>
+    apiClient.get<ApiResponse<PagedResult<ReviewSlot>>>(
+      `/review-slots/by-period/${reviewPeriodId}`,
+      { params: { ...params, pageSize: params?.pageSize ?? 100 } }
+    ),
 
-  inviteStudent: (groupId: number, studentId: number) =>
-    apiClient.post<ApiResponse<null>>(`/Groups/${groupId}/invite`, { studentId }),
+  getMyGroupSchedule: (reviewPeriodId: number) =>
+    apiClient.get<ApiResponse<MyGroupScheduleDto>>(
+      `/review-periods/${reviewPeriodId}/my-group-schedule`
+    ),
 
-  respondToInvitation: (invitationId: number, accept: boolean) =>
-    apiClient.post<ApiResponse<null>>(`/Groups/invitations/${invitationId}/respond`, {
-      accept,
+  getMyGroupPreferences: (reviewPeriodId: number) =>
+    apiClient.get<ApiResponse<unknown>>(`/review-periods/${reviewPeriodId}/group-preferences/my-group`),
+
+  registerGroupPreferences: (reviewPeriodId: number, preferences: SlotPreferenceItem[]) =>
+    apiClient.post<ApiResponse<null>>(`/review-periods/${reviewPeriodId}/group-preferences`, {
+      preferences,
     }),
 
-  markGroupReady: (groupId: number) =>
-    apiClient.post<ApiResponse<null>>(`/Groups/${groupId}/ready`),
-
-  // Topics
-  getTopics: (search?: string) =>
-    apiClient.get<ApiResponse<Topic[]>>('/Topics', { params: { search } }),
-
-  registerTopicForGroup: (data: {
-    groupId: number
-    title: string
-    description?: string
-    supervisorId: number
-  }) => apiClient.post<ApiResponse<null>>('/Topics/register-for-group', data),
-
-  registerExistingTopicForGroup: (topicId: number, groupId: number) =>
-    apiClient.post<ApiResponse<null>>(`/Topics/${topicId}/register-group`, { groupId }),
-
-  // Review Slots
-  getAvailableSlots: (reviewPeriodId: number) =>
-    apiClient.get<ApiResponse<ReviewSlot[]>>('/ReviewSlots', {
-      params: { reviewPeriodId },
+  updateGroupPreferences: (reviewPeriodId: number, preferences: SlotPreferenceItem[]) =>
+    apiClient.put<ApiResponse<null>>(`/review-periods/${reviewPeriodId}/group-preferences`, {
+      preferences,
     }),
-
-  registerForSlot: (slotId: number) =>
-    apiClient.post<ApiResponse<null>>(`/ReviewSlots/${slotId}/register-group`),
-
-  unregisterFromSlot: (slotId: number) =>
-    apiClient.delete<ApiResponse<null>>(`/ReviewSlots/${slotId}/unregister-group`),
 }

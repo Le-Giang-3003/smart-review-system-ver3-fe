@@ -1,47 +1,32 @@
 import { apiClient } from './client'
-import type { ApiResponse } from '@/types/api'
-import type {
-  LecturerDashboardDto,
-  ReviewSlot,
-  MyReviewSessionDto,
-  FeedbackDto,
-  UpdateDetailItem,
-  GroupFeedbackHistoryDto,
-} from '@/types/entities'
+import type { ApiResponse, PagedResult } from '@/types/api'
+import type { LecturerDashboardDto, ReviewSlot, MyLecturerScheduleDto, SlotPreferenceItem } from '@/types/entities'
 
 export const lecturerApiService = {
   getDashboard: () =>
-    apiClient.get<ApiResponse<LecturerDashboardDto>>('/Dashboard/lecturer'),
+    apiClient.get<ApiResponse<LecturerDashboardDto>>('/dashboard/lecturer'),
 
-  getAvailableSlots: (reviewPeriodId: number) =>
-    apiClient.get<ApiResponse<ReviewSlot[]>>('/ReviewSlots', {
-      params: { reviewPeriodId },
+  getMySchedule: (reviewPeriodId: number) =>
+    apiClient.get<ApiResponse<MyLecturerScheduleDto>>(`/review-periods/${reviewPeriodId}/my-schedule`),
+
+  getSlotsForPeriod: (reviewPeriodId: number, params?: { pageNumber?: number; pageSize?: number }) =>
+    apiClient.get<ApiResponse<PagedResult<ReviewSlot>>>(
+      `/review-slots/by-period/${reviewPeriodId}`,
+      { params: { ...params, pageSize: params?.pageSize ?? 100 } }
+    ),
+
+  getMyLecturerPreferences: (reviewPeriodId: number) =>
+    apiClient.get<ApiResponse<unknown>>(`/review-periods/${reviewPeriodId}/lecturer-preferences/me`),
+
+  registerLecturerPreferences: (reviewPeriodId: number, preferences: SlotPreferenceItem[]) =>
+    apiClient.post<ApiResponse<null>>(`/review-periods/${reviewPeriodId}/lecturer-preferences`, {
+      preferences,
     }),
 
-  registerForSlot: (slotId: number) =>
-    apiClient.post<ApiResponse<null>>(`/ReviewSlots/${slotId}/register-lecturer`),
-
-  unregisterFromSlot: (slotId: number) =>
-    apiClient.delete<ApiResponse<null>>(`/ReviewSlots/${slotId}/unregister-lecturer`),
+  updateLecturerPreferences: (reviewPeriodId: number, preferences: SlotPreferenceItem[]) =>
+    apiClient.put<ApiResponse<null>>(`/review-periods/${reviewPeriodId}/lecturer-preferences`, {
+      preferences,
+    }),
 }
 
-export const feedbackService = {
-  getMySessions: () =>
-    apiClient.get<ApiResponse<MyReviewSessionDto[]>>('/review-feedbacks/my-sessions'),
-  create: (reviewSessionId: number) =>
-    apiClient.post<ApiResponse<FeedbackDto>>('/review-feedbacks', { reviewSessionId }),
-  getById: (id: number) =>
-    apiClient.get<ApiResponse<FeedbackDto>>(`/review-feedbacks/${id}`),
-  updateDetails: (id: number, details: UpdateDetailItem[]) =>
-    apiClient.put<ApiResponse<unknown>>(`/review-feedbacks/${id}/details`, { details }),
-  updateComment: (id: number, data: { overallComment?: string; suggestion?: number }) =>
-    apiClient.put<ApiResponse<unknown>>(`/review-feedbacks/${id}/comment`, data),
-  submit: (id: number) =>
-    apiClient.post<ApiResponse<unknown>>(`/review-feedbacks/${id}/submit`),
-  getBySession: (sessionId: number) =>
-    apiClient.get<ApiResponse<FeedbackDto[]>>(`/review-feedbacks/by-session/${sessionId}`),
-  getGroupHistory: (groupId: number) =>
-    apiClient.get<ApiResponse<GroupFeedbackHistoryDto>>(
-      `/review-feedbacks/group-history/${groupId}`
-    ),
-}
+export { reviewAssignmentService } from './admin.service'

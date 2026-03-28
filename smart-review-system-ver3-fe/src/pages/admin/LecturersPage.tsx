@@ -10,14 +10,9 @@ import {
   App,
   Row,
   Col,
-  Tag,
-  Tooltip,
   Tabs,
 } from 'antd'
-import { 
-  PlusOutlined, EditOutlined, DeleteOutlined, 
-  UploadOutlined, BuildOutlined, TagsOutlined, 
-} from '@ant-design/icons'
+import { PlusOutlined, EditOutlined, DeleteOutlined, UploadOutlined, BuildOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { lecturerService } from '@/api/admin.service'
 import { PageWrapper } from '@/components/common/PageWrapper'
@@ -31,12 +26,8 @@ export const LecturersPage = () => {
   
   const [loadModalOpen, setLoadModalOpen] = useState(false)
   const [selectedLecturerId, setSelectedLecturerId] = useState<number | null>(null)
-  const [expertiseModalOpen, setExpertiseModalOpen] = useState(false)
-  const [expertiseLecturer, setExpertiseLecturer] = useState<Lecturer | null>(null)
-  
   const [form] = Form.useForm()
   const [loadForm] = Form.useForm()
-  const [expertiseForm] = Form.useForm()
   
   const fileInputRef = useRef<HTMLInputElement>(null)
   
@@ -143,27 +134,6 @@ export const LecturersPage = () => {
     },
   })
 
-  const updateExpertiseMutation = useMutation({
-    mutationFn: ({ id, keywords }: { id: number; keywords: string[] }) =>
-      lecturerService.upsertExpertise(id, keywords),
-    onSuccess: (res) => {
-      if (isApiSuccess(res.data)) {
-        message.success('Cập nhật chuyên môn thành công')
-        setExpertiseModalOpen(false)
-        setExpertiseLecturer(null)
-        expertiseForm.resetFields()
-      } else {
-        message.error(res.data.message || 'Cập nhật chuyên môn thất bại')
-      }
-      invalidateLecturers()
-    },
-    onError: (error: any) => {
-      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
-      invalidateLecturers()
-    },
-  })
-
-
   const openCreate = () => {
     form.resetFields()
     form.setFieldsValue({ minTopics: 0, maxTopics: 3 })
@@ -223,49 +193,10 @@ export const LecturersPage = () => {
     }
   }
 
-  const openExpertiseModal = (record: Lecturer) => {
-    setExpertiseLecturer(record)
-    expertiseForm.setFieldsValue({
-      expertises: record.expertises ?? [],
-    })
-    setExpertiseModalOpen(true)
-  }
-
-  const onExpertiseSubmit = () => {
-    if (!expertiseLecturer) return
-    expertiseForm.validateFields().then((values) => {
-      const keywords = (values.expertises || []).map((k: string) => k.trim()).filter((k: string) => k.length > 0)
-      updateExpertiseMutation.mutate({ id: expertiseLecturer.id, keywords })
-    })
-  }
-
   const lecturerColumns = [
     { title: 'Họ tên', dataIndex: 'fullName' },
     { title: 'Mã GV', dataIndex: 'lecturerCode' },
     { title: 'Khoa/Bộ môn', dataIndex: 'department' },
-    {
-      title: 'Chuyên môn',
-      dataIndex: 'expertises',
-      render: (expertises: string[] = []) => {
-        if (!expertises.length) return <span style={{ color: '#A8A29E' }}>Chưa cấu hình</span>
-        const [first, second, ...rest] = expertises
-        const items = [first, second].filter(Boolean)
-        return (
-          <Space size={4} wrap>
-            {items.map((e) => (
-              <Tag key={e} color="orange">
-                {e}
-              </Tag>
-            ))}
-            {rest.length > 0 && (
-              <Tooltip title={expertises.join(', ')}>
-                <Tag color="default">+{rest.length}</Tag>
-              </Tooltip>
-            )}
-          </Space>
-        )
-      },
-    },
     {
       title: 'Tải HD',
       render: (_: unknown, record: Lecturer) => `${record.minTopics} - ${record.maxTopics}`,
@@ -276,12 +207,6 @@ export const LecturersPage = () => {
       render: (_: unknown, record: Lecturer) => (
         <Space>
           <Button icon={<EditOutlined />} onClick={() => openEdit(record)} size="small" />
-          <Button
-            icon={<TagsOutlined />}
-            title="Chuyên môn"
-            onClick={() => openExpertiseModal(record)}
-            size="small"
-          />
           <Button icon={<BuildOutlined />} title="Cấu hình tải" onClick={() => {
             setSelectedLecturerId(record.id)
             setLoadModalOpen(true)
@@ -418,32 +343,6 @@ export const LecturersPage = () => {
         </Form>
       </Modal>
 
-      <Modal
-        title={expertiseLecturer ? `Cấu hình chuyên môn - ${expertiseLecturer.fullName}` : 'Cấu hình chuyên môn'}
-        open={expertiseModalOpen}
-        onCancel={() => {
-          setExpertiseModalOpen(false)
-          setExpertiseLecturer(null)
-          expertiseForm.resetFields()
-        }}
-        onOk={onExpertiseSubmit}
-        confirmLoading={updateExpertiseMutation.isPending}
-        okText="Lưu"
-      >
-        <Form form={expertiseForm} layout="vertical">
-          <Form.Item
-            name="expertises"
-            label="Chuyên môn (keyword)"
-            tooltip="Nhập từ khóa chuyên môn, nhấn Enter sau mỗi từ"
-          >
-            <Select
-              mode="tags"
-              placeholder="Ví dụ: Trí tuệ nhân tạo, Xử lý ảnh, Hệ thống nhúng"
-              tokenSeparators={[',']}
-            />
-          </Form.Item>
-        </Form>
-      </Modal>
     </PageWrapper>
   )
 }

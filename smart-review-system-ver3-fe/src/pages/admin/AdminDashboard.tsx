@@ -1,11 +1,10 @@
-import { Card, Row, Col, Statistic, Spin, Alert, Table, Tag, Progress } from 'antd'
+import { Card, Row, Col, Statistic, Spin, Alert, Table, Tag } from 'antd'
 import { useQuery } from '@tanstack/react-query'
 import {
   TeamOutlined,
   FileTextOutlined,
   BookOutlined,
   CalendarOutlined,
-  PieChartOutlined,
 } from '@ant-design/icons'
 import { dashboardService } from '@/api/admin.service'
 import { PageWrapper } from '@/components/common/PageWrapper'
@@ -54,37 +53,31 @@ export const AdminDashboard = () => {
     totalTopics,
     activeSemester,
     reviewPeriods = [],
-    workloadDistribution,
-    slotFillRate,
   } = dashboardData
 
   const reviewPeriodColumns = [
     { title: 'Tên đợt', dataIndex: 'name' },
     {
-      title: 'Vòng',
-      dataIndex: 'round',
-      render: (r: string | number) => formatReviewRound(r),
+      title: 'Thứ tự',
+      dataIndex: 'order',
+      render: (r: number) => formatReviewRound(r),
     },
     {
       title: 'Trạng thái',
       dataIndex: 'status',
       render: (s: string | number) => (
-        <Tag color={reviewPeriodStatusColor(s)}>
-          {formatReviewPeriodStatus(s)}
-        </Tag>
+        <Tag color={reviewPeriodStatusColor(s)}>{formatReviewPeriodStatus(s)}</Tag>
       ),
     },
     { title: 'Số slot', dataIndex: 'slotCount' },
+    { title: 'Hội đồng', dataIndex: 'councilCount' },
+    { title: 'Phân công', dataIndex: 'assignmentCount' },
   ]
 
   return (
     <PageWrapper
       title="Tổng quan"
-      subtitle={
-        activeSemester
-          ? `Học kỳ hiện tại: ${activeSemester.code} - ${activeSemester.name}`
-          : undefined
-      }
+      subtitle={activeSemester ? `Học kỳ hoạt động (mã): ${activeSemester}` : 'Chưa có học kỳ được kích hoạt'}
     >
       <Row gutter={[20, 20]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} lg={6}>
@@ -125,48 +118,11 @@ export const AdminDashboard = () => {
         </Col>
       </Row>
 
-      {workloadDistribution && (
-        <Card
-          title={
-            <span>
-              <PieChartOutlined style={{ color: '#0D9488', marginRight: 8 }} />
-              Phân bổ tải giảng viên (theo đề tài min–max)
-            </span>
-          }
-          style={{ marginBottom: 20 }}
-        >
-          <Row gutter={[16, 16]}>
-            <Col xs={12} sm={6}>
-              <Statistic title="Đang ở mức tối thiểu" value={workloadDistribution.lecturersAtMin} />
-            </Col>
-            <Col xs={12} sm={6}>
-              <Statistic title="Trong khoảng" value={workloadDistribution.lecturersBetween} />
-            </Col>
-            <Col xs={12} sm={6}>
-              <Statistic title="Gần tối đa" value={workloadDistribution.lecturersNearMax} />
-            </Col>
-            <Col xs={12} sm={6}>
-              <Statistic title="Vượt tải" value={workloadDistribution.lecturersOverMax} valueStyle={{ color: '#ef4444' }} />
-            </Col>
-          </Row>
-        </Card>
-      )}
-
-      {typeof slotFillRate === 'number' && (
-        <Card title="Tỷ lệ lấp đầy slot review" style={{ marginBottom: 20 }}>
-          <Progress
-            percent={Math.round(slotFillRate * 100)}
-            status="active"
-            format={(p) => `${p}%`}
-          />
-        </Card>
-      )}
-
       <Card
         title={
           <span>
             <CalendarOutlined style={{ color: '#F97316', marginRight: 8 }} />
-            Các đợt review
+            Các đợt review (học kỳ hoạt động)
           </span>
         }
       >

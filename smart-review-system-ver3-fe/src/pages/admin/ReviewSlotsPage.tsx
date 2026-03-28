@@ -3,15 +3,17 @@ import { Table, Button, Space, Modal, Form, Input, DatePicker, Select, App } fro
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
-import { reviewSlotService, reviewPeriodService } from '@/api/admin.service'
+import { reviewSlotService, reviewPeriodService, semesterService } from '@/api/admin.service'
 import { formatDate, formatTime } from '@/utils/format'
 import { PageWrapper } from '@/components/common/PageWrapper'
 import { isApiSuccess } from '@/types/api'
-import type { ReviewSlot } from '@/types/entities'
+import type { ReviewPeriod, ReviewSlot } from '@/types/entities'
+import { extractListFromApiData } from '@/utils/api'
 
 export const ReviewSlotsPage = () => {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
+  const [semesterId, setSemesterId] = useState<number | undefined>()
   const [periodFilter, setPeriodFilter] = useState<number | undefined>()
   const [form] = Form.useForm()
   const queryClient = useQueryClient()
@@ -19,20 +21,32 @@ export const ReviewSlotsPage = () => {
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['review-slots'] })
 
-  const { data: periods = [] } = useQuery({
-    queryKey: ['review-periods'],
+  const { data: semesters = [] } = useQuery({
+    queryKey: ['semesters'],
     queryFn: async () => {
-      const res = await reviewPeriodService.getAll()
+      const res = await semesterService.getAll()
       return res.data.data ?? []
     },
+  })
+
+  const { data: periods = [] } = useQuery<ReviewPeriod[]>({
+    queryKey: ['review-periods', semesterId],
+    queryFn: async () => {
+      if (!semesterId) return []
+      const res = await reviewPeriodService.getBySemester(semesterId)
+      return extractListFromApiData<ReviewPeriod>(res.data?.data)
+    },
+    enabled: !!semesterId,
   })
 
   const { data: slots = [], isLoading } = useQuery({
     queryKey: ['review-slots', periodFilter],
     queryFn: async () => {
-      const res = await reviewSlotService.getAll(periodFilter)
-      return res.data.data ?? []
+      if (!periodFilter) return []
+      const res = await reviewSlotService.getByPeriod(periodFilter, { pageSize: 200 })
+      return extractListFromApiData<ReviewSlot>(res.data?.data)
     },
+    enabled: !!periodFilter,
   })
 
   const createMutation = useMutation({
@@ -55,7 +69,7 @@ export const ReviewSlotsPage = () => {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
-      reviewSlotService.update(id, data),
+      reviewSlotService.update(id, data as any),
     onSuccess: (res) => {
       if (isApiSuccess(res.data)) {
         message.success('Cập nhật thành công')
@@ -91,6 +105,7 @@ export const ReviewSlotsPage = () => {
 
   const openCreate = () => {
     form.resetFields()
+    if (periodFilter) form.setFieldsValue({ reviewPeriodId: periodFilter })
     setEditingId(null)
     setModalOpen(true)
   }
@@ -99,8 +114,8 @@ export const ReviewSlotsPage = () => {
     form.setFieldsValue({
       reviewPeriodId: record.reviewPeriodId,
       date: dayjs(record.date),
-      startTime: dayjs(record.startTime, 'HH:mm'),
-      endTime: dayjs(record.endTime, 'HH:mm'),
+      startTime: dayjs(record.startTime.length <= 5 ? `${record.startTime}:00` : record.startTime, 'HH:mm:ss'),
+      endTime: dayjs(record.endTime.length <= 5 ? `${record.endTime}:00` : record.endTime, 'HH:mm:ss'),
       room: record.room,
       maxGroups: record.maxGroups,
     })
@@ -116,7 +131,7 @@ export const ReviewSlotsPage = () => {
         startTime: values.startTime.format('HH:mm:ss'),
         endTime: values.endTime.format('HH:mm:ss'),
         room: values.room,
-        maxGroups: Number(values.maxGroups) || 5,
+        maxGroups: Number(values.maxGroups) || 3,
       }
       if (editingId) {
         updateMutation.mutate({ id: editingId, data: { ...payload, id: editingId } })
@@ -139,8 +154,6 @@ export const ReviewSlotsPage = () => {
     },
     { title: 'Phòng', dataIndex: 'room', render: (v: string) => v || '-' },
     { title: 'Nhóm tối đa', dataIndex: 'maxGroups', align: 'center' as const },
-    { title: 'GV đã ĐK', dataIndex: 'registeredLecturers', align: 'center' as const, render: (v: number) => v ?? 0 },
-    { title: 'Nhóm đã ĐK', dataIndex: 'registeredGroups', align: 'center' as const, render: (v: number) => v ?? 0 },
     {
       title: 'Thao tác',
       key: 'actions',
@@ -170,13 +183,27 @@ export const ReviewSlotsPage = () => {
       extra={
         <Space>
           <Select
-            placeholder="Lọc theo đợt review"
-            allowClear
+            placeholder="Học kỳ"
             style={{ width: 200 }}
-            onChange={setPeriodFilter}
-            options={periods.map((p) => ({ label: p.name, value: p.id }))}
+            value={semesterId}
+            onChange={(v) => {
+              setSemesterId(v)
+              setPeriodFilter(undefined)
+            }}
+            options={semesters.map((s: { id: number; name: string; code: string }) => ({
+              label: `${s.code}`,
+              value: s.id,
+            }))}
           />
-          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+          <Select
+            placeholder="Đợt review"
+            allowClear
+            style={{ width: 220 }}
+            value={periodFilter}
+            onChange={setPeriodFilter}
+            options={periods.map((p: { id: number; name: string }) => ({ label: p.name, value: p.id }))}
+          />
+          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate} disabled={!periodFilter}>
             Thêm slot
           </Button>
         </Space>
@@ -199,7 +226,7 @@ export const ReviewSlotsPage = () => {
           <Form.Item name="reviewPeriodId" label="Đợt review" rules={[{ required: true }]}>
             <Select
               placeholder="Chọn đợt review"
-              options={periods.map((p) => ({ label: p.name, value: p.id }))}
+              options={periods.map((p: { id: number; name: string }) => ({ label: p.name, value: p.id }))}
             />
           </Form.Item>
           <Form.Item name="date" label="Ngày" rules={[{ required: true }]}>
@@ -217,11 +244,15 @@ export const ReviewSlotsPage = () => {
             <Input placeholder="VD: Phòng A101" />
           </Form.Item>
           <Form.Item name="maxGroups" label="Số nhóm tối đa">
-            <Input type="number" min={1} placeholder="5" />
+            <Input type="number" min={1} placeholder="3" />
           </Form.Item>
           <Form.Item>
             <Space>
-              <Button type="primary" htmlType="submit" loading={createMutation.isPending || updateMutation.isPending}>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={createMutation.isPending || updateMutation.isPending}
+              >
                 {editingId ? 'Cập nhật' : 'Tạo'}
               </Button>
               <Button onClick={() => setModalOpen(false)}>Hủy</Button>

@@ -1,269 +1,145 @@
 import { useState } from 'react'
-import { Table, Button, Space, Select, App, Alert, Drawer, Collapse, Tag, Empty } from 'antd'
-import { CheckOutlined, CloseOutlined, LockOutlined } from '@ant-design/icons'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { reviewSessionService, reviewPeriodService } from '@/api/admin.service'
-import { feedbackService } from '@/api/lecturer.service'
+import { Table, Space, Select, Card, Tag, Drawer, Descriptions } from 'antd'
+import { useQuery } from '@tanstack/react-query'
+import { councilService, reviewPeriodService, semesterService } from '@/api/admin.service'
 import { formatDate, formatTime } from '@/utils/format'
 import { PageWrapper } from '@/components/common/PageWrapper'
-import { isApiSuccess } from '@/types/api'
-import type { GroupFeedbackHistory, ReviewSession } from '@/types/entities'
-import { FEEDBACK_STATUS_LABELS, SUGGESTION_LABELS } from '@/constants'
+import type { CouncilListItem, ReviewPeriod } from '@/types/entities'
+import { extractListFromApiData } from '@/utils/api'
 
 export const ReviewSessionsPage = () => {
-  const [periodFilter, setPeriodFilter] = useState<number | undefined>()
-  const [historyGroupId, setHistoryGroupId] = useState<number>()
-  const [historyOpen, setHistoryOpen] = useState(false)
-  const queryClient = useQueryClient()
-  const { message } = App.useApp()
+  const [semesterId, setSemesterId] = useState<number | undefined>()
+  const [periodId, setPeriodId] = useState<number | undefined>()
+  const [detail, setDetail] = useState<CouncilListItem | null>(null)
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['review-sessions'] })
-
-  const { data: periods = [] } = useQuery({
-    queryKey: ['review-periods'],
+  const { data: semesters = [] } = useQuery({
+    queryKey: ['semesters'],
     queryFn: async () => {
-      const res = await reviewPeriodService.getAll()
+      const res = await semesterService.getAll()
       return res.data.data ?? []
     },
   })
 
-  const { data: sessions = [], isLoading } = useQuery({
-    queryKey: ['review-sessions', periodFilter],
+  const { data: periods = [] } = useQuery<ReviewPeriod[]>({
+    queryKey: ['review-periods', semesterId],
     queryFn: async () => {
-      const res = await reviewSessionService.getAll({ reviewPeriodId: periodFilter })
-      return res.data.data ?? []
+      if (!semesterId) return []
+      const res = await reviewPeriodService.getBySemester(semesterId)
+      return extractListFromApiData<ReviewPeriod>(res.data?.data)
     },
+    enabled: !!semesterId,
   })
 
-  const { data: historyData, isFetching: isHistoryLoading } = useQuery({
-    queryKey: ['group-feedback-history', historyGroupId],
+  const { data: councils = [], isLoading } = useQuery({
+    queryKey: ['councils', periodId],
     queryFn: async () => {
-      if (!historyGroupId) return null
-      const res = await feedbackService.getGroupHistory(historyGroupId)
-      return (res.data?.data ?? null) as GroupFeedbackHistory | null
+      if (!periodId) return []
+      const res = await councilService.getForReviewPeriod(periodId, { pageSize: 200 })
+      return extractListFromApiData<CouncilListItem>(res.data?.data)
     },
-    enabled: !!historyGroupId,
-  })
-
-  const approveMutation = useMutation({
-    mutationFn: reviewSessionService.approve,
-    onSuccess: (res) => {
-      if (isApiSuccess(res.data)) {
-        message.success('Phê duyệt thành công')
-      } else {
-        message.error(res.data.message || 'Phê duyệt thất bại')
-      }
-      invalidate()
-    },
-    onError: (error: any) => {
-      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
-      invalidate()
-    },
-  })
-
-  const rejectMutation = useMutation({
-    mutationFn: ({ id, reason }: { id: number; reason: string }) =>
-      reviewSessionService.reject(id, reason),
-    onSuccess: (res) => {
-      if (isApiSuccess(res.data)) {
-        message.success('Từ chối thành công')
-      } else {
-        message.error(res.data.message || 'Từ chối thất bại')
-      }
-      invalidate()
-    },
-    onError: (error: any) => {
-      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
-      invalidate()
-    },
-  })
-
-  const lockMutation = useMutation({
-    mutationFn: reviewSessionService.lock,
-    onSuccess: (res) => {
-      if (isApiSuccess(res.data)) {
-        message.success('Khóa phiên thành công')
-      } else {
-        message.error(res.data.message || 'Khóa thất bại')
-      }
-      invalidate()
-    },
-    onError: (error: any) => {
-      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
-      invalidate()
-    },
+    enabled: !!periodId,
   })
 
   const columns = [
-    { title: 'ID', dataIndex: 'id', width: 60 },
-    { title: 'Đợt review', dataIndex: 'reviewPeriodName' },
     {
       title: 'Ngày',
-      dataIndex: 'slotDate',
+      dataIndex: 'date',
       render: (d: string) => formatDate(d),
     },
     {
-      title: 'Thời gian',
-      render: (_: unknown, r: ReviewSession) => `${formatTime(r.startTime)} - ${formatTime(r.endTime)}`,
+      title: 'Giờ',
+      render: (_: unknown, r: CouncilListItem) =>
+        `${formatTime(r.startTime)} - ${formatTime(r.endTime)}`,
     },
-    { title: 'Nhóm', dataIndex: 'groupName' },
-    { title: 'Đề tài', dataIndex: 'topicTitle' },
+    { title: 'Phòng', dataIndex: 'room', render: (v?: string | null) => v || '—' },
     {
       title: 'Hội đồng',
-      dataIndex: 'councilMembers',
-      render: (members: Array<{ fullName?: string; lecturerName?: string }> | undefined) =>
-        members?.map((m) => m.fullName ?? m.lecturerName ?? '').filter(Boolean).join(', ') ||
-        '-',
+      render: (_: unknown, r: CouncilListItem) =>
+        r.members?.map((m) => `${m.fullName}${m.isChairman ? ' (CT)' : ''}`).join(', ') || '—',
     },
     {
-      title: 'Trạng thái ĐK',
-      dataIndex: 'registrationStatus',
-      render: (s: number) => (s === 0 ? 'Chờ duyệt' : s === 1 ? 'Đã duyệt' : 'Từ chối'),
+      title: 'Nhóm',
+      render: (_: unknown, r: CouncilListItem) => r.groups?.map((g) => g.groupName).join(', ') || '—',
     },
     {
-      title: 'Thao tác',
-      key: 'actions',
-      render: (_: unknown, record: ReviewSession) => (
-        <Space>
-          {record.registrationStatus === 0 && (
-            <>
-              <Button
-                type="link"
-                icon={<CheckOutlined />}
-                onClick={() => approveMutation.mutate(record.id)}
-                size="small"
-              >
-                Duyệt
-              </Button>
-              <Button
-                type="link"
-                danger
-                icon={<CloseOutlined />}
-                onClick={() => {
-                  const reason = prompt('Lý do từ chối:')
-                  if (reason) rejectMutation.mutate({ id: record.id, reason })
-                }}
-                size="small"
-              >
-                Từ chối
-              </Button>
-            </>
-          )}
-          <Button
-            type="link"
-            icon={<LockOutlined />}
-            onClick={() => lockMutation.mutate(record.id)}
-            size="small"
-          >
-            Khóa
-          </Button>
-          <Button
-            type="link"
-            onClick={() => {
-              setHistoryGroupId(record.groupId)
-              setHistoryOpen(true)
-            }}
-            size="small"
-          >
-            Xem lịch sử đánh giá
-          </Button>
-        </Space>
+      title: '',
+      key: 'x',
+      render: (_: unknown, r: CouncilListItem) => (
+        <a onClick={() => setDetail(r)}>Chi tiết</a>
       ),
     },
   ]
 
   return (
     <PageWrapper
-      title="Phiên review"
-      extra={
-        <Select
-          placeholder="Lọc theo đợt review"
-          allowClear
-          style={{ width: 250 }}
-          value={periodFilter}
-          onChange={setPeriodFilter}
-          options={periods.map((p) => ({ label: p.name, value: p.id }))}
-        />
-      }
+      title="Hội đồng & phân công"
+      subtitle="Dữ liệu từ GET /review-periods/{id}/councils (admin)"
     >
-      {periodFilter && sessions.length === 0 && !isLoading && (
-        <Alert
-          message="Chưa có phiên review"
-          description="Phiên review được tạo khi chạy Lên lịch. Vào trang Lên lịch, chọn đợt review và nhấn 'Chạy lên lịch' để tạo phiên review."
-          type="info"
-          showIcon
-          style={{ marginBottom: 16 }}
-        />
-      )}
+      <Card style={{ marginBottom: 16 }}>
+        <Space wrap>
+          <Select
+            placeholder="Học kỳ"
+            style={{ width: 200 }}
+            value={semesterId}
+            onChange={(v) => {
+              setSemesterId(v)
+              setPeriodId(undefined)
+            }}
+            options={semesters.map((s: { id: number; code: string; name: string }) => ({
+              label: `${s.code} — ${s.name}`,
+              value: s.id,
+            }))}
+          />
+          <Select
+            placeholder="Đợt review"
+            style={{ width: 280 }}
+            value={periodId}
+            onChange={setPeriodId}
+            options={periods.map((p: { id: number; name: string }) => ({ label: p.name, value: p.id }))}
+          />
+        </Space>
+      </Card>
+
       <Table
-        columns={columns}
-        dataSource={sessions}
-        rowKey="id"
+        rowKey="councilId"
         loading={isLoading}
-        pagination={{ pageSize: 10 }}
+        columns={columns}
+        dataSource={councils}
+        pagination={false}
       />
+
       <Drawer
-        title="Lịch sử đánh giá nhóm"
-        width={780}
-        open={historyOpen}
-        onClose={() => setHistoryOpen(false)}
+        title="Chi tiết hội đồng"
+        open={!!detail}
+        onClose={() => setDetail(null)}
+        width={480}
       >
-        {!historyData && !isHistoryLoading ? (
-          <Empty description="Nhóm này chưa có lịch sử đánh giá" />
-        ) : (
-          <>
-            <p>
-              <b>Nhóm:</b> {historyData?.groupName || '-'}
-            </p>
-            <p>
-              <b>Đề tài:</b> {historyData?.topicTitle || '-'}
-            </p>
-            <Collapse
-              items={(historyData?.rounds ?? []).map((round) => ({
-                key: String(round.round),
-                label: `Round ${round.round} - ${round.reviewPeriodName}`,
-                children:
-                  round.feedbacks?.length > 0 ? (
-                    <Table
-                      size="small"
-                      pagination={false}
-                      rowKey="feedbackId"
-                      dataSource={round.feedbacks}
-                      columns={[
-                        { title: 'Giảng viên', dataIndex: 'reviewerName' },
-                        {
-                          title: 'Vai trò',
-                          dataIndex: 'isChairman',
-                          width: 110,
-                          render: (value: boolean) =>
-                            value ? <Tag color="gold">Chairman</Tag> : <Tag>Member</Tag>,
-                        },
-                        {
-                          title: 'Nhận xét tổng',
-                          dataIndex: 'overallComment',
-                          render: (value?: string) => value || '-',
-                        },
-                        {
-                          title: 'Đề xuất',
-                          dataIndex: 'suggestion',
-                          width: 130,
-                          render: (value?: number) =>
-                            value == null ? '-' : SUGGESTION_LABELS[value] || String(value),
-                        },
-                        {
-                          title: 'Trạng thái',
-                          dataIndex: 'status',
-                          width: 110,
-                          render: (value: number) => FEEDBACK_STATUS_LABELS[value] || String(value),
-                        },
-                      ]}
-                    />
-                  ) : (
-                    <Empty description="Round này chưa có feedback" />
-                  ),
-              }))}
-            />
-          </>
+        {detail && (
+          <Descriptions column={1} bordered size="small">
+            <Descriptions.Item label="Council ID">{detail.councilId}</Descriptions.Item>
+            <Descriptions.Item label="Slot ID">{detail.slotId}</Descriptions.Item>
+            <Descriptions.Item label="Thời gian">
+              {formatDate(detail.date)} {formatTime(detail.startTime)} – {formatTime(detail.endTime)}
+            </Descriptions.Item>
+            <Descriptions.Item label="Thứ">{detail.dayOfWeek}</Descriptions.Item>
+            <Descriptions.Item label="Thành viên">
+              {detail.members?.map((m) => (
+                <Tag key={m.lecturerId}>
+                  {m.fullName} {m.isChairman ? '(Chủ tịch)' : ''}
+                </Tag>
+              ))}
+            </Descriptions.Item>
+            <Descriptions.Item label="Nhóm / assignment">
+              <ul style={{ paddingLeft: 18, margin: 0 }}>
+                {detail.groups?.map((g) => (
+                  <li key={g.assignmentId}>
+                    {g.groupName} — {g.topicTitleEn || g.topicCode || '—'}{' '}
+                    {g.hasComment ? <Tag color="green">Đã có nhận xét</Tag> : <Tag>Chưa nhận xét</Tag>}
+                  </li>
+                ))}
+              </ul>
+            </Descriptions.Item>
+          </Descriptions>
         )}
       </Drawer>
     </PageWrapper>

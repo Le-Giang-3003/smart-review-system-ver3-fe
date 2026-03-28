@@ -11,42 +11,10 @@ export interface ChangePasswordRequest {
   newPassword: string
 }
 
-export interface ResetPasswordRequest {
-  email: string
-}
-
-export interface ResetPasswordConfirmRequest {
-  token: string
-  newPassword: string
-}
-
-export interface CreateAccountRequest {
-  email: string
-  role: 'Admin' | 'Lecturer' | 'Student'
-  lecturerId?: number
-  studentId?: number
-}
-
-export interface LockUnlockAccountRequest {
-  userId: number
-  isLocked: boolean
-}
-
+/** Chỉ các endpoint có trên BE (`AuthController`). */
 export const authService = {
   login: async (data: LoginRequest) => {
     const response = await apiClient.post<ApiResponse<LoginResponse>>('/auth/login', data)
-    return response.data
-  },
-
-  logout: async (refreshToken: string) => {
-    const response = await apiClient.post<ApiResponse<null>>('/auth/logout', { refreshToken })
-    return response.data
-  },
-
-  refreshToken: async (refreshToken: string) => {
-    const response = await apiClient.post<ApiResponse<LoginResponse>>('/auth/refresh-token', {
-      refreshToken,
-    })
     return response.data
   },
 
@@ -60,23 +28,10 @@ export const authService = {
     return response.data
   },
 
-  requestPasswordReset: async (data: ResetPasswordRequest) => {
-    const response = await apiClient.post<ApiResponse<null>>('/auth/request-password-reset', data)
-    return response.data
-  },
-
-  confirmPasswordReset: async (data: ResetPasswordConfirmRequest) => {
-    const response = await apiClient.post<ApiResponse<null>>('/auth/confirm-password-reset', data)
-    return response.data
-  },
-
-  createAccount: async (data: CreateAccountRequest) => {
-    const response = await apiClient.post<ApiResponse<null>>('/auth/create-account', data)
-    return response.data
-  },
-
-  lockUnlockAccount: async (data: LockUnlockAccountRequest) => {
-    const response = await apiClient.post<ApiResponse<null>>('/auth/lock-unlock', data)
-    return response.data
-  },
+  /** BE chưa có endpoint — trả lỗi rõ ràng cho UI */
+  requestPasswordReset: async (_data: { email: string }): Promise<ApiResponse<null>> => ({
+    data: null,
+    statusCode: 4000,
+    message: 'Backend chưa hỗ trợ đặt lại mật khẩu qua email.',
+  }),
 }

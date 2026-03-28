@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Table, Button, Space, Modal, Form, Input, DatePicker, Select, App } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined, PlayCircleOutlined, StopOutlined } from '@ant-design/icons'
+import { PlusOutlined, EditOutlined, PlayCircleOutlined, StopOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { reviewPeriodService, semesterService } from '@/api/admin.service'
@@ -13,13 +13,15 @@ import {
 import { PageWrapper } from '@/components/common/PageWrapper'
 import { isApiSuccess } from '@/types/api'
 import type { ReviewPeriod } from '@/types/entities'
+import { extractListFromApiData } from '@/utils/api'
 
 export const ReviewPeriodsPage = () => {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
+  const [semesterId, setSemesterId] = useState<number | undefined>()
   const [form] = Form.useForm()
   const queryClient = useQueryClient()
-  const { modal, message } = App.useApp()
+  const { message } = App.useApp()
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['review-periods'] })
 
@@ -32,11 +34,13 @@ export const ReviewPeriodsPage = () => {
   })
 
   const { data: periods = [], isLoading } = useQuery({
-    queryKey: ['review-periods'],
+    queryKey: ['review-periods', semesterId],
     queryFn: async () => {
-      const res = await reviewPeriodService.getAll()
-      return res.data.data ?? []
+      if (!semesterId) return []
+      const res = await reviewPeriodService.getBySemester(semesterId)
+      return extractListFromApiData<ReviewPeriod>(res.data?.data)
     },
+    enabled: !!semesterId,
   })
 
   const createMutation = useMutation({
@@ -59,7 +63,7 @@ export const ReviewPeriodsPage = () => {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
-      reviewPeriodService.update(id, data),
+      reviewPeriodService.update(id, data as { id: number; name: string; startDate: string; endDate: string }),
     onSuccess: (res) => {
       if (isApiSuccess(res.data)) {
         message.success('Cập nhật thành công')
@@ -77,24 +81,8 @@ export const ReviewPeriodsPage = () => {
     },
   })
 
-  const deleteMutation = useMutation({
-    mutationFn: reviewPeriodService.delete,
-    onSuccess: (res) => {
-      if (isApiSuccess(res.data)) {
-        message.success('Xóa thành công')
-      } else {
-        message.error(res.data.message || 'Xóa thất bại')
-      }
-      invalidate()
-    },
-    onError: (error: any) => {
-      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
-      invalidate()
-    },
-  })
-
   const transitionMutation = useMutation({
-    mutationFn: ({ id, targetStatus }: { id: number; targetStatus: number }) =>
+    mutationFn: ({ id, targetStatus }: { id: number; targetStatus: string }) =>
       reviewPeriodService.transitionStatus(id, targetStatus),
     onSuccess: (res) => {
       if (isApiSuccess(res.data)) {
@@ -112,11 +100,12 @@ export const ReviewPeriodsPage = () => {
 
   const openCreate = () => {
     form.resetFields()
+    if (semesterId) form.setFieldsValue({ semesterId })
     setEditingId(null)
     setModalOpen(true)
   }
 
-  const roundToFormValue = (r: string | number): number => {
+  const orderToFormValue = (r: string | number | undefined): number => {
     if (typeof r === 'number' && !Number.isNaN(r)) return r
     if (typeof r === 'string') {
       const m = /^Round(\d+)$/i.exec(r.trim())
@@ -131,7 +120,7 @@ export const ReviewPeriodsPage = () => {
     form.setFieldsValue({
       semesterId: record.semesterId,
       name: record.name,
-      round: roundToFormValue(record.round),
+      order: orderToFormValue(record.order ?? record.round),
       startDate: dayjs(record.startDate),
       endDate: dayjs(record.endDate),
     })
@@ -141,17 +130,21 @@ export const ReviewPeriodsPage = () => {
 
   const onSubmit = () => {
     form.validateFields().then((values) => {
-      const payload = {
-        semesterId: values.semesterId,
-        name: values.name,
-        round: values.round,
-        startDate: values.startDate.format('YYYY-MM-DD'),
-        endDate: values.endDate.format('YYYY-MM-DD'),
-      }
+      const startDate = values.startDate.format('YYYY-MM-DD')
+      const endDate = values.endDate.format('YYYY-MM-DD')
       if (editingId) {
-        updateMutation.mutate({ id: editingId, data: { ...payload, id: editingId } })
+        updateMutation.mutate({
+          id: editingId,
+          data: { id: editingId, name: values.name, startDate, endDate },
+        })
       } else {
-        createMutation.mutate(payload)
+        createMutation.mutate({
+          semesterId: values.semesterId,
+          name: values.name,
+          order: values.order,
+          startDate,
+          endDate,
+        })
       }
     })
   }
@@ -159,11 +152,11 @@ export const ReviewPeriodsPage = () => {
   const columns = [
     { title: 'ID', dataIndex: 'id', width: 60 },
     { title: 'Tên', dataIndex: 'name' },
-    { title: 'Học kỳ', dataIndex: 'semesterName' },
+    { title: 'Học kỳ', dataIndex: 'semesterCode' },
     {
-      title: 'Vòng',
-      dataIndex: 'round',
-      render: (r: string | number) => formatReviewRound(r),
+      title: 'Thứ tự',
+      dataIndex: 'order',
+      render: (_: unknown, r: ReviewPeriod) => formatReviewRound(r.order ?? r.round ?? 1),
     },
     {
       title: 'Bắt đầu',
@@ -193,7 +186,7 @@ export const ReviewPeriodsPage = () => {
               <Button
                 type="link"
                 icon={<PlayCircleOutlined />}
-                onClick={() => transitionMutation.mutate({ id: record.id, targetStatus: 1 })}
+                onClick={() => transitionMutation.mutate({ id: record.id, targetStatus: 'Open' })}
                 size="small"
               >
                 Mở đăng ký
@@ -203,7 +196,7 @@ export const ReviewPeriodsPage = () => {
               <Button
                 type="link"
                 icon={<StopOutlined />}
-                onClick={() => transitionMutation.mutate({ id: record.id, targetStatus: 2 })}
+                onClick={() => transitionMutation.mutate({ id: record.id, targetStatus: 'Scheduling' })}
                 size="small"
               >
                 Chốt đăng ký
@@ -213,7 +206,7 @@ export const ReviewPeriodsPage = () => {
               <Button
                 type="link"
                 icon={<PlayCircleOutlined />}
-                onClick={() => transitionMutation.mutate({ id: record.id, targetStatus: 3 })}
+                onClick={() => transitionMutation.mutate({ id: record.id, targetStatus: 'Scheduled' })}
                 size="small"
               >
                 Chốt lịch
@@ -223,7 +216,7 @@ export const ReviewPeriodsPage = () => {
               <Button
                 type="link"
                 icon={<PlayCircleOutlined />}
-                onClick={() => transitionMutation.mutate({ id: record.id, targetStatus: 4 })}
+                onClick={() => transitionMutation.mutate({ id: record.id, targetStatus: 'InProgress' })}
                 size="small"
               >
                 Bắt đầu review
@@ -233,24 +226,12 @@ export const ReviewPeriodsPage = () => {
               <Button
                 type="link"
                 icon={<StopOutlined />}
-                onClick={() => transitionMutation.mutate({ id: record.id, targetStatus: 5 })}
+                onClick={() => transitionMutation.mutate({ id: record.id, targetStatus: 'Closed' })}
                 size="small"
               >
                 Kết thúc
               </Button>
             )}
-            <Button
-              danger
-              icon={<DeleteOutlined />}
-              onClick={() => {
-                modal.confirm({
-                  title: 'Xác nhận xóa',
-                  content: `Xóa đợt review "${record.name}"?`,
-                  onOk: () => deleteMutation.mutate(record.id),
-                })
-              }}
-              size="small"
-            />
           </Space>
         )
       },
@@ -261,11 +242,25 @@ export const ReviewPeriodsPage = () => {
     <PageWrapper
       title="Quản lý đợt review"
       extra={
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate} disabled={!semesterId}>
           Thêm đợt review
         </Button>
       }
     >
+      <div style={{ marginBottom: 16 }}>
+        <span style={{ marginRight: 12 }}>Chọn học kỳ:</span>
+        <Select
+          placeholder="Học kỳ"
+          style={{ width: 280 }}
+          value={semesterId}
+          onChange={(v) => setSemesterId(v)}
+          options={semesters.map((s: { id: number; name: string; code: string }) => ({
+            label: `${s.code} — ${s.name}`,
+            value: s.id,
+          }))}
+        />
+      </div>
+
       <Table
         columns={columns}
         dataSource={periods}
@@ -283,19 +278,20 @@ export const ReviewPeriodsPage = () => {
         <Form form={form} layout="vertical" onFinish={onSubmit} style={{ marginTop: 8 }}>
           <Form.Item name="semesterId" label="Học kỳ" rules={[{ required: true }]}>
             <Select
+              disabled={!!editingId}
               placeholder="Chọn học kỳ"
-              options={semesters.map((s) => ({ label: s.name, value: s.id }))}
+              options={semesters.map((s: { id: number; name: string }) => ({ label: s.name, value: s.id }))}
             />
           </Form.Item>
           <Form.Item name="name" label="Tên" rules={[{ required: true }]}>
             <Input placeholder="VD: Đợt review vòng 1" />
           </Form.Item>
-          <Form.Item name="round" label="Vòng review" rules={[{ required: true }]}>
+          <Form.Item name="order" label="Thứ tự đợt (order)" rules={[{ required: true }]}>
             <Select
               options={[
-                { label: 'Vòng 1', value: 1 },
-                { label: 'Vòng 2', value: 2 },
-                { label: 'Vòng 3', value: 3 },
+                { label: '1', value: 1 },
+                { label: '2', value: 2 },
+                { label: '3', value: 3 },
               ]}
             />
           </Form.Item>
@@ -309,7 +305,11 @@ export const ReviewPeriodsPage = () => {
           </Space>
           <Form.Item>
             <Space>
-              <Button type="primary" htmlType="submit" loading={createMutation.isPending || updateMutation.isPending}>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={createMutation.isPending || updateMutation.isPending}
+              >
                 {editingId ? 'Cập nhật' : 'Tạo'}
               </Button>
               <Button onClick={() => setModalOpen(false)}>Hủy</Button>

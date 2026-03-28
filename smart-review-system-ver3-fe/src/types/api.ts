@@ -21,6 +21,9 @@ export interface PaginatedResponse<T> {
   hasNextPage?: boolean
 }
 
+/** Alias khớp `PagedResult<T>` từ BE */
+export type PagedResult<T> = PaginatedResponse<T>
+
 export interface UserInfo {
   id: number
   email: string
@@ -33,15 +36,26 @@ export interface UserInfo {
   lecturerCode?: string
 }
 
+/** Khớp `LoginResponse` từ BE — không có refresh token */
 export interface LoginResponse {
   accessToken: string
-  refreshToken: string
   accessTokenExpiry: string
   user: UserInfo
 }
 
+/** Import GV/SV từ Excel (Lecturers/Students controller) */
+export interface LecturerStudentImportResultDto {
+  created: number
+  updated: number
+  errors: string[]
+}
+
+/** Import capstone / tổng hợp — các handler BE có thể khác nhau */
 export interface ImportResultDto {
-  successCount: number
-  errorCount: number
+  totalFiles?: number
+  lecturersCreated?: number
+  studentsCreated?: number
+  groupsCreated?: number
+  topicsCreated?: number
   errors: string[]
 }
