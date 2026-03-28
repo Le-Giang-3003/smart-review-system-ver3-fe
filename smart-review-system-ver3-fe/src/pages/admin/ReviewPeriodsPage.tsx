@@ -13,7 +13,7 @@ import {
 import { PageWrapper } from '@/components/common/PageWrapper'
 import { isApiSuccess } from '@/types/api'
 import type { ReviewPeriod } from '@/types/entities'
-import { extractListFromApiData } from '@/utils/api'
+import { extractListFromApiData, getApiErrorMessage } from '@/utils/api'
 
 export const ReviewPeriodsPage = () => {
   const [modalOpen, setModalOpen] = useState(false)
@@ -55,8 +55,8 @@ export const ReviewPeriodsPage = () => {
       }
       invalidate()
     },
-    onError: (error: any) => {
-      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+    onError: (error: unknown) => {
+      message.error(getApiErrorMessage(error))
       invalidate()
     },
   })
@@ -75,8 +75,8 @@ export const ReviewPeriodsPage = () => {
       }
       invalidate()
     },
-    onError: (error: any) => {
-      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+    onError: (error: unknown) => {
+      message.error(getApiErrorMessage(error))
       invalidate()
     },
   })
@@ -92,8 +92,8 @@ export const ReviewPeriodsPage = () => {
       }
       invalidate()
     },
-    onError: (error: any) => {
-      message.error(error.response?.data?.message || 'Có lỗi xảy ra')
+    onError: (error: unknown) => {
+      message.error(getApiErrorMessage(error))
       invalidate()
     },
   })
@@ -130,8 +130,9 @@ export const ReviewPeriodsPage = () => {
 
   const onSubmit = () => {
     form.validateFields().then((values) => {
-      const startDate = values.startDate.format('YYYY-MM-DD')
-      const endDate = values.endDate.format('YYYY-MM-DD')
+      // BE bind `DateTime` — gửi ISO có giờ để tránh lỗi deserialize JSON
+      const startDate = `${values.startDate.format('YYYY-MM-DD')}T00:00:00`
+      const endDate = `${values.endDate.format('YYYY-MM-DD')}T23:59:59`
       if (editingId) {
         updateMutation.mutate({
           id: editingId,
@@ -141,7 +142,7 @@ export const ReviewPeriodsPage = () => {
         createMutation.mutate({
           semesterId: values.semesterId,
           name: values.name,
-          order: values.order,
+          order: Number(values.order),
           startDate,
           endDate,
         })
