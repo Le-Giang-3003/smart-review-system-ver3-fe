@@ -71,10 +71,7 @@ export const ReviewSessionsPage = () => {
   ]
 
   return (
-    <PageWrapper
-      title="Hội đồng & phân công"
-      subtitle="Dữ liệu từ GET /review-periods/{id}/councils (admin)"
-    >
+    <PageWrapper title="Hội đồng & phân công" subtitle="Xem hội đồng và nhóm theo đợt review.">
       <Card style={{ marginBottom: 16 }}>
         <Space wrap>
           <Select

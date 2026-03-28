@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Card, Table, Button, Select, App, Space, Alert, Empty, Form } from 'antd'
+import { Card, Table, Button, Select, App, Space, Empty, Form } from 'antd'
 import { CalendarOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { studentApiService } from '@/api/student.service'
@@ -117,15 +117,8 @@ export const StudentSlotsPage = () => {
   return (
     <PageWrapper
       title="Đăng ký ưu tiên slot (nhóm)"
-      subtitle="Nhóm trưởng đăng ký đúng 5 slot — API `group-preferences` trên backend"
+      subtitle="Nhóm trưởng chọn đủ 5 slot theo thứ tự ưu tiên."
     >
-      <Alert
-        style={{ marginBottom: 16 }}
-        type="info"
-        showIcon
-        message="Cần thuộc nhóm và là nhóm trưởng theo quy tắc backend; nếu lỗi 403/400 hãy kiểm tra với giáo vụ."
-      />
-
       <Card style={{ marginBottom: 16 }}>
         <Space wrap>
           <Select

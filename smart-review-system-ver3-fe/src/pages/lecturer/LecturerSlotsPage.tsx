@@ -121,7 +121,7 @@ export const LecturerSlotsPage = () => {
   return (
     <PageWrapper
       title="Đăng ký ưu tiên slot"
-      subtitle="Backend yêu cầu đúng 5 slot xếp theo mức ưu tiên 1 (cao nhất) đến 5"
+      subtitle="Chọn đúng 5 slot, xếp theo mức ưu tiên từ 1 (cao nhất) đến 5."
     >
       <Card style={{ marginBottom: 16 }}>
         <Space wrap>

@@ -7,7 +7,6 @@ import { PageWrapper } from '@/components/common/PageWrapper'
 import type { TopicListItem } from '@/types/entities'
 import { extractListFromApiData } from '@/utils/api'
 
-/** BE chỉ mở GET `/topics` — trang xem danh sách. */
 export const TopicsPage = () => {
   const [searchText, setSearchText] = useState('')
 
@@ -29,10 +28,7 @@ export const TopicsPage = () => {
   ]
 
   return (
-    <PageWrapper
-      title="Đề tài"
-      subtitle="Dữ liệu chỉ đọc — tạo/cập nhật đề tài qua import hoặc luồng backend (không có REST CRUD)."
-    >
+    <PageWrapper title="Đề tài">
       <Space style={{ marginBottom: 16 }}>
         <Input
           placeholder="Tìm theo mã, tên, GVHD..."

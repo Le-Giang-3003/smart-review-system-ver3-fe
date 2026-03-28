@@ -7,7 +7,6 @@ import { PageWrapper } from '@/components/common/PageWrapper'
 import type { TopicListItem } from '@/types/entities'
 import { extractListFromApiData } from '@/utils/api'
 
-/** `TopicsController` BE chỉ GET — sinh viên chỉ xem danh sách. */
 export const StudentTopicsPage = () => {
   const [search, setSearch] = useState('')
 
@@ -28,7 +27,7 @@ export const StudentTopicsPage = () => {
   ]
 
   return (
-    <PageWrapper title="Đề tài" subtitle="Xem danh sách — đăng ký đề tài qua quy trình backend/import, không có POST /topics trên API hiện tại.">
+    <PageWrapper title="Đề tài">
       <Space style={{ marginBottom: 16 }}>
         <Input
           placeholder="Tìm kiếm..."

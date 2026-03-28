@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Table, Input, Select, Tag, App, Card } from 'antd'
+import { Table, Input, Select, Tag, Card } from 'antd'
 import { SearchOutlined } from '@ant-design/icons'
 import { useQuery } from '@tanstack/react-query'
 import { userService } from '@/api/admin.service'
@@ -9,11 +9,9 @@ import { ROLE_LABELS, ROLE_COLORS, ROLE_VALUE_LABELS, ROLE_VALUE_COLORS } from '
 import { extractListFromApiData } from '@/utils/api'
 import type { UserListItem } from '@/types/entities'
 
-/** BE chỉ có GET `/users` — không tạo/khóa tài khoản qua API. */
 export const UsersPage = () => {
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState<string | undefined>()
-  const { modal } = App.useApp()
 
   const { data: usersData, isLoading } = useQuery<UserListItem[]>({
     queryKey: ['users', search, roleFilter],
@@ -74,23 +72,7 @@ export const UsersPage = () => {
   ]
 
   return (
-    <PageWrapper
-      title="Quản lý tài khoản"
-      subtitle="Chỉ xem danh sách — tạo/khóa tài khoản không có trên API backend hiện tại"
-      extra={
-        <a
-          onClick={() =>
-            modal.info({
-              title: 'Thông tin',
-              content:
-                'UsersController BE chỉ hỗ trợ GET. Thao tác quản lý user thực hiện qua seed/DB hoặc khi backend bổ sung endpoint.',
-            })
-          }
-        >
-          Giúp
-        </a>
-      }
-    >
+    <PageWrapper title="Quản lý tài khoản">
       <Card>
         <div style={{ marginBottom: 16, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           <Input

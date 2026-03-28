@@ -121,7 +121,7 @@ export const LecturerFeedbackPage = () => {
   ]
 
   return (
-    <PageWrapper title="Nhận xét nhóm (hội đồng)" subtitle="Ghi nhận xét theo từng assignment — API PUT /review-assignments/{id}/comment">
+    <PageWrapper title="Nhận xét nhóm (hội đồng)" subtitle="Ghi nhận xét theo từng phân công.">
       {scheduleError ? (
         <Alert type="warning" showIcon style={{ marginBottom: 16 }} message={(scheduleError as Error).message} />
       ) : null}

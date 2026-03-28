@@ -70,7 +70,7 @@ export const SchedulingPage = () => {
       } else if (env) {
         message.error(env.message || 'Reset lịch thất bại')
       } else {
-        message.error('Phản hồi API không hợp lệ sau khi reset.')
+        message.error('Không xử lý được phản hồi sau khi reset. Vui lòng thử lại.')
       }
       queryClient.invalidateQueries({ queryKey: ['scheduling-result', selectedPeriodId] })
       queryClient.invalidateQueries({ queryKey: ['review-periods', semesterId] })
