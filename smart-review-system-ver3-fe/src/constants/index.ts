@@ -1,3 +1,15 @@
+import type { TablePaginationConfig } from 'antd/es/table/interface'
+
+/** Lấy đủ bản ghi một lần; bảng phân trang phía client (giống trang Nhóm). */
+export const ADMIN_LIST_API_PAGE_SIZE = 500
+
+/** Phân trang bảng danh sách admin: số trang + ellipsis + chọn số dòng/trang (locale vi_VN). */
+export const ADMIN_LIST_TABLE_PAGINATION: TablePaginationConfig = {
+  pageSize: 12,
+  showSizeChanger: true,
+  pageSizeOptions: ['12', '24', '48', '96'],
+}
+
 export const STORAGE_KEYS = {
   TOKEN: 'smart_review_token',
   REFRESH_TOKEN: 'smart_review_refresh_token',

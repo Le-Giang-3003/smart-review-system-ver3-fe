@@ -7,6 +7,7 @@ import { PageWrapper } from '@/components/common/PageWrapper'
 import { isApiSuccess } from '@/types/api'
 import type { Student } from '@/types/entities'
 import { extractListFromApiData } from '@/utils/api'
+import { ADMIN_LIST_API_PAGE_SIZE, ADMIN_LIST_TABLE_PAGINATION } from '@/constants'
 
 export const StudentsPage = () => {
   const [modalOpen, setModalOpen] = useState(false)
@@ -23,7 +24,7 @@ export const StudentsPage = () => {
   const { data: students = [], isLoading } = useQuery({
     queryKey: ['students'],
     queryFn: async () => {
-      const res = await studentService.getAll()
+      const res = await studentService.getAll(undefined, 1, ADMIN_LIST_API_PAGE_SIZE)
       return extractListFromApiData<Student>(res.data?.data)
     },
   })
@@ -192,7 +193,7 @@ export const StudentsPage = () => {
         dataSource={students}
         rowKey="id"
         loading={isLoading}
-        pagination={{ pageSize: 12 }}
+        pagination={ADMIN_LIST_TABLE_PAGINATION}
       />
 
       <Modal

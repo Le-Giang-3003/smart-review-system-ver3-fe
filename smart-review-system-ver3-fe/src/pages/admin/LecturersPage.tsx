@@ -19,6 +19,7 @@ import { PageWrapper } from '@/components/common/PageWrapper'
 import type { Lecturer } from '@/types/entities'
 import { isApiSuccess } from '@/types/api'
 import { extractListFromApiData } from '@/utils/api'
+import { ADMIN_LIST_API_PAGE_SIZE, ADMIN_LIST_TABLE_PAGINATION } from '@/constants'
 
 export const LecturersPage = () => {
   const [modalOpen, setModalOpen] = useState(false)
@@ -39,7 +40,7 @@ export const LecturersPage = () => {
   const { data: lecturers = [], isLoading } = useQuery({
     queryKey: ['lecturers'],
     queryFn: async () => {
-      const res = await lecturerService.getAll()
+      const res = await lecturerService.getAll(undefined, undefined, 1, ADMIN_LIST_API_PAGE_SIZE)
       return extractListFromApiData<Lecturer>(res.data?.data)
     },
   })
@@ -263,7 +264,7 @@ export const LecturersPage = () => {
                   dataSource={lecturers}
                   rowKey="id"
                   loading={isLoading}
-                  pagination={{ pageSize: 12 }}
+                  pagination={ADMIN_LIST_TABLE_PAGINATION}
                 />
               </>
             ),

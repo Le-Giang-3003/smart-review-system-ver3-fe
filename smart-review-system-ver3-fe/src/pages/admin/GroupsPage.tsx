@@ -7,6 +7,7 @@ import { GROUP_STATUS_LABELS } from '@/constants'
 import { PageWrapper } from '@/components/common/PageWrapper'
 import type { GroupListItem } from '@/types/entities'
 import { extractListFromApiData } from '@/utils/api'
+import { ADMIN_LIST_TABLE_PAGINATION } from '@/constants'
 
 export const GroupsPage = () => {
   const [searchText, setSearchText] = useState('')
@@ -71,7 +72,7 @@ export const GroupsPage = () => {
         dataSource={filteredGroups}
         rowKey="id"
         loading={isLoading}
-        pagination={{ pageSize: 12 }}
+        pagination={ADMIN_LIST_TABLE_PAGINATION}
       />
     </PageWrapper>
   )
