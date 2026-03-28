@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Card, Button, Select, Table, Alert, App, Empty, Tag, Space } from 'antd'
+import { Card, Button, Select, Table, Alert, App, Empty, Space, Row, Col, Statistic, Progress } from 'antd'
 import { ThunderboltOutlined, UndoOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { schedulingService, reviewPeriodService, semesterService } from '@/api/admin.service'
@@ -227,17 +227,39 @@ export const SchedulingPage = () => {
 
       {selectedPeriodId && !isResultLoading && scheduleResult && (
         <>
-          <Card
-            title="Tóm tắt"
-            style={{ marginBottom: 16 }}
-            extra={
-              <Space>
-                <Tag>Tổng slot: {scheduleResult.totalSlots}</Tag>
-                <Tag color="success">Đã xếp HĐ: {scheduleResult.scheduledSlots}</Tag>
-                <Tag color="warning">Chưa xếp: {scheduleResult.unscheduledSlots}</Tag>
-              </Space>
-            }
-          />
+          <Card title="Tóm tắt" style={{ marginBottom: 16 }}>
+            <Row gutter={[16, 16]}>
+              <Col xs={24} sm={8}>
+                <Statistic title="Tổng slot" value={scheduleResult.totalSlots} />
+              </Col>
+              <Col xs={24} sm={8}>
+                <Statistic
+                  title="Đã xếp hội đồng"
+                  value={scheduleResult.scheduledSlots}
+                  valueStyle={{ color: '#389e0d' }}
+                />
+              </Col>
+              <Col xs={24} sm={8}>
+                <Statistic
+                  title="Chưa xếp"
+                  value={scheduleResult.unscheduledSlots}
+                  valueStyle={{ color: '#d48806' }}
+                />
+              </Col>
+            </Row>
+            {scheduleResult.totalSlots > 0 && (
+              <Progress
+                style={{ marginTop: 8 }}
+                percent={Math.round(
+                  (scheduleResult.scheduledSlots / scheduleResult.totalSlots) * 100
+                )}
+                status="active"
+                format={(pct) =>
+                  `${pct ?? 0}% slot đã có hội đồng (${scheduleResult.scheduledSlots}/${scheduleResult.totalSlots})`
+                }
+              />
+            )}
+          </Card>
           <Card title="Hội đồng đã xếp" style={{ marginBottom: 16 }}>
             <Table
               rowKey="councilId"
