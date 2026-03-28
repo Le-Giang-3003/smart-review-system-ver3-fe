@@ -46,14 +46,28 @@ export const SchedulingPage = () => {
 
   const runMutation = useMutation({
     mutationFn: (periodId: number) => schedulingService.run(periodId),
-    onSuccess: (res) => {
-      const env = getApiEnvelopeFromMutationResult<unknown>(res) as ApiResponse<unknown> | null
+    onSuccess: (res, periodId) => {
+      const env = getApiEnvelopeFromMutationResult<SchedulingResultDto>(res) as ApiResponse<SchedulingResultDto> | null
       if (env && isApiSuccess(env)) {
-        message.success('Chạy thuật toán thành công')
+        const dto = env.data
+        if (dto != null) {
+          queryClient.setQueryData<SchedulingResultDto>(['scheduling-result', periodId], dto)
+        }
+        const scheduled = dto?.scheduledSlots ?? 0
+        if (scheduled === 0) {
+          message.warning(
+            dto?.unscheduledSlots
+              ? `Thuật toán đã chạy xong nhưng không tạo được hội đồng nào (${dto.unscheduledSlots} slot chưa xếp). Xem bảng «Lý do» phía dưới.`
+              : 'Thuật toán đã chạy xong nhưng không tạo được hội đồng nào. Xem bảng «Lý do» phía dưới.'
+          )
+        } else {
+          message.success(env.message?.trim() || 'Chạy thuật toán thành công')
+        }
       } else if (env) {
         message.error(env.message || 'Chạy thuật toán thất bại')
       }
-      queryClient.invalidateQueries({ queryKey: ['scheduling-result', selectedPeriodId] })
+      // Không invalidate `scheduling-result`: GET /result chỉ có thông điệp chung «No council assigned»,
+      // sẽ ghi đè lý do chi tiết từ response POST của thuật toán.
       queryClient.invalidateQueries({ queryKey: ['review-periods', semesterId] })
     },
     onError: (error: unknown) => {
@@ -191,6 +205,19 @@ export const SchedulingPage = () => {
           message="Kết quả hiển thị theo hội đồng đã gán cho từng slot. Slot chưa có hội đồng nằm ở bảng cuối."
         />
       )}
+
+      {selectedPeriodId &&
+        scheduleResult &&
+        scheduleResult.totalSlots > 0 &&
+        scheduleResult.scheduledSlots === 0 && (
+          <Alert
+            type="warning"
+            showIcon
+            style={{ marginBottom: 16 }}
+            message="Chưa có hội đồng nào được gán"
+            description="Thông báo thành công chỉ có nghĩa là server đã chạy xong thuật toán, không đảm bảo đã tạo được hội đồng. Bảng trên trống khi không có cặp giảng viên thỏa điều kiện; xem cột Lý do ở bảng dưới (ưu tiên xem ngay sau khi bấm «Chạy xếp lịch», trước khi tải lại trang)."
+          />
+        )}
 
       {!selectedPeriodId && <Empty description="Chọn học kỳ và đợt review để xem kết quả" />}
 
