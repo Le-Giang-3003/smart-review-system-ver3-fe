@@ -129,7 +129,7 @@ export const StudentSlotsPage = () => {
       }
       queryClient.invalidateQueries({ queryKey: ['student-slots'] })
       queryClient.invalidateQueries({ queryKey: ['my-group-preferences', selectedPeriodId] })
-      queryClient.invalidateQueries({ queryKey: ['student-slot-pref-status'] })
+      queryClient.invalidateQueries({ queryKey: ['registered-slot-preferences-dashboard', 'student'] })
     },
     onError: (e: any) => message.error(e.response?.data?.message || 'Lưu thất bại'),
   })

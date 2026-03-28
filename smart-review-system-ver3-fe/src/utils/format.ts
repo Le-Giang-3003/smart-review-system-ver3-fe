@@ -14,6 +14,11 @@ export const formatDate = (date: string | Date, pattern = 'dd/MM/yyyy'): string 
   return format(d, pattern, { locale: vi })
 }
 
+/** Thứ trong tuần tiếng Việt theo ngày (vd. «Thứ hai») */
+export const formatWeekdayVi = (dateIso: string): string => {
+  return format(parseISO(dateIso), 'EEEE', { locale: vi })
+}
+
 export const formatDateTime = (date: string | Date): string => {
   const d = typeof date === 'string' ? parseISO(date) : date
   return format(d, 'dd/MM/yyyy HH:mm', { locale: vi })

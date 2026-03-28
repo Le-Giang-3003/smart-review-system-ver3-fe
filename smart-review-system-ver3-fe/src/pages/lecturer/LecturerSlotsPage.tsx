@@ -129,7 +129,7 @@ export const LecturerSlotsPage = () => {
       }
       queryClient.invalidateQueries({ queryKey: ['lecturer-slots'] })
       queryClient.invalidateQueries({ queryKey: ['my-lecturer-preferences', selectedPeriodId] })
-      queryClient.invalidateQueries({ queryKey: ['lecturer-slot-pref-status'] })
+      queryClient.invalidateQueries({ queryKey: ['registered-slot-preferences-dashboard', 'lecturer'] })
     },
     onError: (e: any) => message.error(e.response?.data?.message || 'Lưu thất bại'),
   })
