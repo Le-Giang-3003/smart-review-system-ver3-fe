@@ -51,7 +51,11 @@ export const ReviewPeriodsPage = () => {
         setModalOpen(false)
         form.resetFields()
       } else {
-        message.error(res.data.message || 'Tạo thất bại')
+        const errList = res.data.errors?.filter((x): x is string => typeof x === 'string')
+        const detail = errList?.length ? errList.join('; ') : ''
+        message.error(
+          [res.data.message, detail].filter(Boolean).join(' — ') || 'Tạo thất bại'
+        )
       }
       invalidate()
     },
@@ -133,16 +137,26 @@ export const ReviewPeriodsPage = () => {
       // BE bind `DateTime` — gửi ISO có giờ để tránh lỗi deserialize JSON
       const startDate = `${values.startDate.format('YYYY-MM-DD')}T00:00:00`
       const endDate = `${values.endDate.format('YYYY-MM-DD')}T23:59:59`
+      const semesterId = Number(values.semesterId)
+      const order = Number(values.order)
+      if (!Number.isFinite(semesterId) || semesterId < 1) {
+        message.error('Học kỳ không hợp lệ')
+        return
+      }
+      if (!Number.isFinite(order) || order < 1 || order > 3) {
+        message.error('Thứ tự đợt phải là 1, 2 hoặc 3')
+        return
+      }
       if (editingId) {
         updateMutation.mutate({
           id: editingId,
-          data: { id: editingId, name: values.name, startDate, endDate },
+          data: { id: editingId, name: String(values.name).trim(), startDate, endDate },
         })
       } else {
         createMutation.mutate({
-          semesterId: values.semesterId,
-          name: values.name,
-          order: Number(values.order),
+          semesterId,
+          name: String(values.name).trim(),
+          order,
           startDate,
           endDate,
         })
