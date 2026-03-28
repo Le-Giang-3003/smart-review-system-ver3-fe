@@ -329,6 +329,28 @@ export interface SlotPreferenceItem {
   priority: number
 }
 
+/** BE `SlotPreferenceDto` */
+export interface SlotPreferenceDto {
+  id: number
+  reviewSlotId: number
+  slotDate: string
+  slotStartTime: string
+  slotEndTime: string
+  slotRoom?: string | null
+  priority: number
+  dayOfWeek: string
+}
+
+/** BE `MyPreferencesDto` */
+export interface MyPreferencesDto {
+  reviewPeriodId: number
+  reviewPeriodName: string
+  ownerType: string
+  ownerName: string
+  ownerId: number
+  preferences: SlotPreferenceDto[]
+}
+
 export interface ReviewAssignmentDto {
   id: number
   councilId: number

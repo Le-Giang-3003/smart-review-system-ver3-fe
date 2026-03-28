@@ -14,13 +14,17 @@ import {
   TeamOutlined,
   FileTextOutlined,
   CalendarOutlined,
+  CheckCircleOutlined,
 } from '@ant-design/icons'
 import { useQuery } from '@tanstack/react-query'
 import { studentApiService } from '@/api/student.service'
+import { reviewPeriodService, semesterService } from '@/api/admin.service'
 import { PageWrapper } from '@/components/common/PageWrapper'
-import { formatDate, formatTime } from '@/utils/format'
+import { formatDate, formatTime, normalizeReviewPeriodStatusKey } from '@/utils/format'
 import { useAuth } from '@/hooks/useAuth'
-import type { UpcomingReviewDto } from '@/types/entities'
+import type { ReviewPeriod, Semester, UpcomingReviewDto } from '@/types/entities'
+import { extractListFromApiData } from '@/utils/api'
+import { isApiSuccess } from '@/types/api'
 
 export const StudentDashboard = () => {
   const { user } = useAuth()
@@ -35,6 +39,35 @@ export const StudentDashboard = () => {
       const res = await studentApiService.getDashboard()
       return res.data.data
     },
+  })
+
+  const { data: registeredPrefPeriodNames = [] } = useQuery({
+    queryKey: ['student-slot-pref-status'],
+    queryFn: async () => {
+      const semRes = await semesterService.getAll()
+      const semesters = (semRes.data.data ?? []).filter((s: Semester) => s.isActive)
+      const names: string[] = []
+      for (const sem of semesters) {
+        const res = await reviewPeriodService.getBySemester(sem.id)
+        const periods = extractListFromApiData<ReviewPeriod>(res.data?.data)
+        const openPeriods = periods.filter(
+          (p) => normalizeReviewPeriodStatusKey(p.status) === 'Open'
+        )
+        for (const p of openPeriods) {
+          try {
+            const prefRes = await studentApiService.getMyGroupPreferences(p.id)
+            const env = prefRes.data
+            if (isApiSuccess(env) && env.data?.preferences?.length === 5) {
+              names.push(p.name)
+            }
+          } catch {
+            /* không trong nhóm hoặc lỗi — bỏ qua */
+          }
+        }
+      }
+      return names
+    },
+    enabled: !!dashboard?.groupName,
   })
 
   if (isLoading) {
@@ -66,6 +99,16 @@ export const StudentDashboard = () => {
 
   return (
     <PageWrapper title="Trang sinh viên" subtitle={displayName ? `Xin chào, ${displayName}` : undefined}>
+      {registeredPrefPeriodNames.length > 0 ? (
+        <Alert
+          type="success"
+          showIcon
+          icon={<CheckCircleOutlined />}
+          message="Nhóm đã đăng ký đủ 5 slot ưu tiên review"
+          description={`Đợt: ${registeredPrefPeriodNames.join(', ')}`}
+          style={{ marginBottom: 24 }}
+        />
+      ) : null}
       <Row gutter={[20, 20]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} lg={8}>
           <Card className="stat-card" style={{ borderTop: '3px solid #F97316' }}>

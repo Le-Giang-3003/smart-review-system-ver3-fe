@@ -6,6 +6,7 @@ import type {
   ReviewSlot,
   MyGroupScheduleDto,
   SlotPreferenceItem,
+  MyPreferencesDto,
 } from '@/types/entities'
 
 export const studentApiService = {
@@ -27,15 +28,17 @@ export const studentApiService = {
     ),
 
   getMyGroupPreferences: (reviewPeriodId: number) =>
-    apiClient.get<ApiResponse<unknown>>(`/review-periods/${reviewPeriodId}/group-preferences/my-group`),
+    apiClient.get<ApiResponse<MyPreferencesDto>>(
+      `/review-periods/${reviewPeriodId}/group-preferences/my-group`
+    ),
 
   registerGroupPreferences: (reviewPeriodId: number, preferences: SlotPreferenceItem[]) =>
-    apiClient.post<ApiResponse<null>>(`/review-periods/${reviewPeriodId}/group-preferences`, {
+    apiClient.post<ApiResponse<MyPreferencesDto>>(`/review-periods/${reviewPeriodId}/group-preferences`, {
       preferences,
     }),
 
   updateGroupPreferences: (reviewPeriodId: number, preferences: SlotPreferenceItem[]) =>
-    apiClient.put<ApiResponse<null>>(`/review-periods/${reviewPeriodId}/group-preferences`, {
+    apiClient.put<ApiResponse<MyPreferencesDto>>(`/review-periods/${reviewPeriodId}/group-preferences`, {
       preferences,
     }),
 }
