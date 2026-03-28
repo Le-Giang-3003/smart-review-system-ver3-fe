@@ -1,15 +1,21 @@
-import { useMemo, useState } from 'react'
-import { Card, Table, Button, Select, App, Space, Alert, Empty, Form } from 'antd'
-import { CalendarOutlined } from '@ant-design/icons'
+import { useEffect, useMemo, useState } from 'react'
+import { Card, Table, Button, Select, App, Space, Alert, Empty, Form, Tag, Spin } from 'antd'
+import { CalendarOutlined, CheckCircleOutlined, ClockCircleOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { lecturerApiService } from '@/api/lecturer.service'
 import { reviewPeriodService, semesterService } from '@/api/admin.service'
-import type { ReviewPeriod } from '@/types/entities'
+import type {
+  MyPreferencesDto,
+  ReviewPeriod,
+  SlotPreferenceDto,
+  ReviewSlot,
+  SlotPreferenceItem,
+} from '@/types/entities'
 import { PageWrapper } from '@/components/common/PageWrapper'
 import { formatDate, formatTime } from '@/utils/format'
-import type { ReviewSlot, SlotPreferenceItem } from '@/types/entities'
 import { extractListFromApiData } from '@/utils/api'
 import { isApiSuccess } from '@/types/api'
+import type { ApiResponse } from '@/types/api'
 
 export const LecturerSlotsPage = () => {
   const [semesterId, setSemesterId] = useState<number | undefined>()
@@ -50,23 +56,80 @@ export const LecturerSlotsPage = () => {
     enabled: !!selectedPeriodId,
   })
 
+  const {
+    data: myPrefs,
+    isLoading: prefsLoading,
+    isFetching: prefsFetching,
+  } = useQuery({
+    queryKey: ['my-lecturer-preferences', selectedPeriodId],
+    queryFn: async (): Promise<MyPreferencesDto | null> => {
+      if (!selectedPeriodId) return null
+      try {
+        const res = await lecturerApiService.getMyLecturerPreferences(selectedPeriodId)
+        const env = res.data as ApiResponse<MyPreferencesDto>
+        if (!isApiSuccess(env) || !env.data) return null
+        return env.data
+      } catch {
+        return null
+      }
+    },
+    enabled: !!selectedPeriodId,
+  })
+
+  const isRegistered = (myPrefs?.preferences?.length ?? 0) === 5
+  const prefsBusy = prefsLoading || prefsFetching
+
+  useEffect(() => {
+    setP1(undefined)
+    setP2(undefined)
+    setP3(undefined)
+    setP4(undefined)
+    setP5(undefined)
+  }, [selectedPeriodId])
+
+  useEffect(() => {
+    if (!myPrefs?.preferences?.length) return
+    const ordered = [...myPrefs.preferences].sort((a, b) => a.priority - b.priority)
+    if (ordered.length !== 5) return
+    setP1(ordered[0].reviewSlotId)
+    setP2(ordered[1].reviewSlotId)
+    setP3(ordered[2].reviewSlotId)
+    setP4(ordered[3].reviewSlotId)
+    setP5(ordered[4].reviewSlotId)
+  }, [myPrefs])
+
   const slotOptions = useMemo(
-    () => slots.map((s) => ({ label: `${formatDate(s.date)} ${formatTime(s.startTime)}–${formatTime(s.endTime)}`, value: s.id })),
+    () =>
+      slots.map((s) => ({
+        label: `${formatDate(s.date)} ${formatTime(s.startTime)}–${formatTime(s.endTime)}`,
+        value: s.id,
+      })),
     [slots]
   )
 
   const saveMutation = useMutation({
-    mutationFn: async (prefs: SlotPreferenceItem[]) => {
+    mutationFn: async (payload: { prefs: SlotPreferenceItem[]; isUpdate: boolean }) => {
+      const { prefs, isUpdate } = payload
+      if (isUpdate) {
+        const res = await lecturerApiService.updateLecturerPreferences(selectedPeriodId!, prefs)
+        return res.data
+      }
       const res = await lecturerApiService.registerLecturerPreferences(selectedPeriodId!, prefs)
       return res.data
     },
-    onSuccess: (res) => {
+    onSuccess: (res, variables) => {
       if (isApiSuccess(res)) {
-        message.success('Đã lưu 5 lựa chọn ưu tiên slot')
+        message.success(
+          variables.isUpdate
+            ? 'Đã cập nhật ưu tiên slot'
+            : 'Đã lưu 5 lựa chọn ưu tiên slot'
+        )
       } else {
-        message.error(res.message || 'Lưu thất bại')
+        message.error(res?.message || 'Lưu thất bại')
       }
       queryClient.invalidateQueries({ queryKey: ['lecturer-slots'] })
+      queryClient.invalidateQueries({ queryKey: ['my-lecturer-preferences', selectedPeriodId] })
+      queryClient.invalidateQueries({ queryKey: ['lecturer-slot-pref-status'] })
     },
     onError: (e: any) => message.error(e.response?.data?.message || 'Lưu thất bại'),
   })
@@ -92,7 +155,7 @@ export const LecturerSlotsPage = () => {
       { reviewSlotId: p4!, priority: 4 },
       { reviewSlotId: p5!, priority: 5 },
     ]
-    saveMutation.mutate(prefs)
+    saveMutation.mutate({ prefs, isUpdate: isRegistered })
   }
 
   const columns = [
@@ -118,10 +181,31 @@ export const LecturerSlotsPage = () => {
     { title: 'Max nhóm', dataIndex: 'maxGroups', align: 'center' as const },
   ]
 
+  const prefColumns = [
+    {
+      title: 'Ưu tiên',
+      dataIndex: 'priority',
+      width: 90,
+      align: 'center' as const,
+      render: (n: number) => <Tag color="blue">{n}</Tag>,
+    },
+    {
+      title: 'Ngày',
+      dataIndex: 'slotDate',
+      render: (d: string) => formatDate(d),
+    },
+    {
+      title: 'Giờ',
+      render: (_: unknown, r: SlotPreferenceDto) =>
+        `${formatTime(r.slotStartTime)} – ${formatTime(r.slotEndTime)}`,
+    },
+    { title: 'Phòng', dataIndex: 'slotRoom', render: (v?: string | null) => v || '—' },
+  ]
+
   return (
     <PageWrapper
       title="Đăng ký ưu tiên slot"
-      subtitle="Chọn đúng 5 slot, xếp theo mức ưu tiên từ 1 (cao nhất) đến 5."
+      subtitle="Chọn đúng 5 slot, xếp theo mức ưu tiên từ 1 (cao nhất) đến 5 — trạng thái đăng ký hiển thị bên dưới."
     >
       <Card style={{ marginBottom: 16 }}>
         <Space wrap>
@@ -154,6 +238,46 @@ export const LecturerSlotsPage = () => {
 
       {selectedPeriodId && (
         <>
+          {prefsBusy ? (
+            <div style={{ marginBottom: 16, textAlign: 'center' }}>
+              <Spin tip="Đang kiểm tra trạng thái đăng ký..." />
+            </div>
+          ) : isRegistered ? (
+            <Alert
+              style={{ marginBottom: 16 }}
+              type="success"
+              showIcon
+              icon={<CheckCircleOutlined />}
+              message={
+                <Space>
+                  <span>Đã đăng ký đủ 5 slot ưu tiên</span>
+                  <Tag color="success" icon={<CheckCircleOutlined />}>
+                    Hoàn tất
+                  </Tag>
+                </Space>
+              }
+              description={
+                <Table<SlotPreferenceDto>
+                  style={{ marginTop: 12 }}
+                  size="small"
+                  pagination={false}
+                  rowKey="id"
+                  columns={prefColumns}
+                  dataSource={[...myPrefs!.preferences].sort((a, b) => a.priority - b.priority)}
+                />
+              }
+            />
+          ) : (
+            <Alert
+              style={{ marginBottom: 16 }}
+              type="warning"
+              showIcon
+              icon={<ClockCircleOutlined />}
+              message="Chưa đăng ký đủ 5 slot ưu tiên"
+              description="Chọn đủ 5 slot khác nhau theo thứ tự ưu tiên rồi gửi đăng ký. Sau khi gửi, trạng thái sẽ hiển thị là đã hoàn tất."
+            />
+          )}
+
           <Card title="Danh sách slot" style={{ marginBottom: 16 }}>
             {slots.length === 0 && !slotsLoading ? (
               <Empty />
@@ -179,7 +303,7 @@ export const LecturerSlotsPage = () => {
                 </Form.Item>
               ))}
               <Button type="primary" onClick={onSavePreferences} loading={saveMutation.isPending}>
-                Gửi đăng ký ưu tiên
+                {isRegistered ? 'Cập nhật đăng ký' : 'Gửi đăng ký ưu tiên'}
               </Button>
             </Form>
           </Card>

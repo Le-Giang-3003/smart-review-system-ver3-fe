@@ -1,6 +1,12 @@
 import { apiClient } from './client'
 import type { ApiResponse, PagedResult } from '@/types/api'
-import type { LecturerDashboardDto, ReviewSlot, MyLecturerScheduleDto, SlotPreferenceItem } from '@/types/entities'
+import type {
+  LecturerDashboardDto,
+  ReviewSlot,
+  MyLecturerScheduleDto,
+  SlotPreferenceItem,
+  MyPreferencesDto,
+} from '@/types/entities'
 
 export const lecturerApiService = {
   getDashboard: () =>
@@ -16,15 +22,15 @@ export const lecturerApiService = {
     ),
 
   getMyLecturerPreferences: (reviewPeriodId: number) =>
-    apiClient.get<ApiResponse<unknown>>(`/review-periods/${reviewPeriodId}/lecturer-preferences/me`),
+    apiClient.get<ApiResponse<MyPreferencesDto>>(`/review-periods/${reviewPeriodId}/lecturer-preferences/me`),
 
   registerLecturerPreferences: (reviewPeriodId: number, preferences: SlotPreferenceItem[]) =>
-    apiClient.post<ApiResponse<null>>(`/review-periods/${reviewPeriodId}/lecturer-preferences`, {
+    apiClient.post<ApiResponse<MyPreferencesDto>>(`/review-periods/${reviewPeriodId}/lecturer-preferences`, {
       preferences,
     }),
 
   updateLecturerPreferences: (reviewPeriodId: number, preferences: SlotPreferenceItem[]) =>
-    apiClient.put<ApiResponse<null>>(`/review-periods/${reviewPeriodId}/lecturer-preferences`, {
+    apiClient.put<ApiResponse<MyPreferencesDto>>(`/review-periods/${reviewPeriodId}/lecturer-preferences`, {
       preferences,
     }),
 }

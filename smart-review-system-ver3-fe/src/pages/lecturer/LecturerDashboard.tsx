@@ -8,10 +8,12 @@ import {
 } from '@ant-design/icons'
 import { useQuery } from '@tanstack/react-query'
 import { lecturerApiService } from '@/api/lecturer.service'
+import { reviewPeriodService, semesterService } from '@/api/admin.service'
 import { PageWrapper } from '@/components/common/PageWrapper'
-import { formatDate, formatTime } from '@/utils/format'
+import { formatDate, formatTime, normalizeReviewPeriodStatusKey } from '@/utils/format'
 import { isApiSuccess } from '@/types/api'
-import type { UpcomingReviewDto } from '@/types/entities'
+import type { ReviewPeriod, Semester, UpcomingReviewDto } from '@/types/entities'
+import { extractListFromApiData } from '@/utils/api'
 
 export const LecturerDashboard = () => {
   const {
@@ -27,6 +29,35 @@ export const LecturerDashboard = () => {
       }
       return res.data.data
     },
+  })
+
+  const { data: registeredPrefPeriodNames = [] } = useQuery({
+    queryKey: ['lecturer-slot-pref-status'],
+    queryFn: async () => {
+      const semRes = await semesterService.getAll()
+      const semesters = (semRes.data.data ?? []).filter((s: Semester) => s.isActive)
+      const names: string[] = []
+      for (const sem of semesters) {
+        const res = await reviewPeriodService.getBySemester(sem.id)
+        const periods = extractListFromApiData<ReviewPeriod>(res.data?.data)
+        const openPeriods = periods.filter(
+          (p) => normalizeReviewPeriodStatusKey(p.status) === 'Open'
+        )
+        for (const p of openPeriods) {
+          try {
+            const prefRes = await lecturerApiService.getMyLecturerPreferences(p.id)
+            const env = prefRes.data
+            if (isApiSuccess(env) && env.data?.preferences?.length === 5) {
+              names.push(p.name)
+            }
+          } catch {
+            /* ignore */
+          }
+        }
+      }
+      return names
+    },
+    enabled: !isLoading && !error,
   })
 
   if (isLoading) {
@@ -84,6 +115,16 @@ export const LecturerDashboard = () => {
 
   return (
     <PageWrapper title="Trang giảng viên" subtitle={`Xin chào, ${lecturerName}`}>
+      {registeredPrefPeriodNames.length > 0 ? (
+        <Alert
+          type="success"
+          showIcon
+          icon={<CheckCircleOutlined />}
+          message="Bạn đã đăng ký đủ 5 slot ưu tiên review"
+          description={`Đợt: ${registeredPrefPeriodNames.join(', ')}`}
+          style={{ marginBottom: 24 }}
+        />
+      ) : null}
       <Row gutter={[20, 20]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} lg={6}>
           <Card className="stat-card" style={{ borderTop: '3px solid #F97316' }}>
