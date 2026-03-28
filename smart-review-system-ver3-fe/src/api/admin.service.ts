@@ -13,6 +13,7 @@ import type {
   AdminDashboardDto,
   CouncilListItem,
   SchedulingResultDto,
+  ResetSchedulingResultDto,
   ReviewAssignmentDto,
   GroupListItem,
   GroupDetail,
@@ -200,6 +201,10 @@ export const schedulingService = {
     apiClient.post<ApiResponse<unknown>>(`/scheduling/review-periods/${reviewPeriodId}/run`),
   getResult: (reviewPeriodId: number) =>
     apiClient.get<ApiResponse<SchedulingResultDto>>(`/scheduling/review-periods/${reviewPeriodId}/result`),
+  reset: (reviewPeriodId: number) =>
+    apiClient.post<ApiResponse<ResetSchedulingResultDto>>(
+      `/scheduling/review-periods/${reviewPeriodId}/reset`
+    ),
 }
 
 export const dashboardService = {

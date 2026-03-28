@@ -317,6 +317,12 @@ export interface SchedulingResultDto {
 /** Alias cũ */
 export type SchedulingResult = SchedulingResultDto
 
+/** Kết quả reset lịch (BE `ResetSchedulingResultDto`) */
+export interface ResetSchedulingResultDto {
+  removedCouncils: number
+  reviewPeriodStatusAfter: string
+}
+
 export interface SlotPreferenceItem {
   reviewSlotId: number
   priority: number

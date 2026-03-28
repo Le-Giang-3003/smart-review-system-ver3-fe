@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Card, Button, Select, Table, Alert, App, Empty, Tag, Space } from 'antd'
-import { ThunderboltOutlined } from '@ant-design/icons'
+import { ThunderboltOutlined, UndoOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { schedulingService, reviewPeriodService, semesterService } from '@/api/admin.service'
 import { formatDate, formatTime, normalizeReviewPeriodStatusKey } from '@/utils/format'
@@ -13,7 +13,7 @@ export const SchedulingPage = () => {
   const [semesterId, setSemesterId] = useState<number | undefined>()
   const [selectedPeriodId, setSelectedPeriodId] = useState<number | undefined>()
   const queryClient = useQueryClient()
-  const { message } = App.useApp()
+  const { message, modal } = App.useApp()
 
   const { data: semesters = [] } = useQuery({
     queryKey: ['semesters'],
@@ -52,9 +52,26 @@ export const SchedulingPage = () => {
         message.error(res.data.message || 'Chạy thuật toán thất bại')
       }
       queryClient.invalidateQueries({ queryKey: ['scheduling-result', selectedPeriodId] })
+      queryClient.invalidateQueries({ queryKey: ['review-periods', semesterId] })
     },
     onError: (error: any) => {
       message.error(error.response?.data?.message || 'Lên lịch thất bại')
+    },
+  })
+
+  const resetMutation = useMutation({
+    mutationFn: (periodId: number) => schedulingService.reset(periodId),
+    onSuccess: (res) => {
+      if (isApiSuccess(res.data)) {
+        message.success(res.data.message || 'Đã reset lịch')
+      } else {
+        message.error(res.data.message || 'Reset lịch thất bại')
+      }
+      queryClient.invalidateQueries({ queryKey: ['scheduling-result', selectedPeriodId] })
+      queryClient.invalidateQueries({ queryKey: ['review-periods', semesterId] })
+    },
+    onError: (error: any) => {
+      message.error(error.response?.data?.message || 'Reset lịch thất bại')
     },
   })
 
@@ -71,6 +88,22 @@ export const SchedulingPage = () => {
       return
     }
     runMutation.mutate(selectedPeriodId)
+  }
+
+  const handleResetSchedule = () => {
+    if (!selectedPeriodId) {
+      message.warning('Chọn đợt review')
+      return
+    }
+    modal.confirm({
+      title: 'Reset lịch đợt review?',
+      content:
+        'Xóa toàn bộ hội đồng đã xếp cho đợt này và đưa trạng thái về «Đang lên lịch» để chạy thuật toán lại. Phù hợp demo — không cần seed lại DB.',
+      okText: 'Reset',
+      okButtonProps: { danger: true },
+      cancelText: 'Hủy',
+      onOk: () => resetMutation.mutateAsync(selectedPeriodId),
+    })
   }
 
   const councilColumns = [
@@ -132,6 +165,15 @@ export const SchedulingPage = () => {
             disabled={!selectedPeriodId}
           >
             Chạy xếp lịch
+          </Button>
+          <Button
+            danger
+            icon={<UndoOutlined />}
+            loading={resetMutation.isPending}
+            onClick={handleResetSchedule}
+            disabled={!selectedPeriodId}
+          >
+            Reset lịch
           </Button>
         </Space>
       </Card>
