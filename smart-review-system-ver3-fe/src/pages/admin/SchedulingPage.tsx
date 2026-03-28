@@ -5,7 +5,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { schedulingService, reviewPeriodService, semesterService } from '@/api/admin.service'
 import { formatDate, formatTime, normalizeReviewPeriodStatusKey } from '@/utils/format'
 import { PageWrapper } from '@/components/common/PageWrapper'
-import { isApiSuccess } from '@/types/api'
+import { type ApiResponse, getApiEnvelopeFromMutationResult, isApiSuccess } from '@/types/api'
+import { getApiErrorMessage } from '@/utils/api'
 import type { ReviewPeriod, SchedulingResultDto } from '@/types/entities'
 import { extractListFromApiData } from '@/utils/api'
 
@@ -46,32 +47,36 @@ export const SchedulingPage = () => {
   const runMutation = useMutation({
     mutationFn: (periodId: number) => schedulingService.run(periodId),
     onSuccess: (res) => {
-      if (isApiSuccess(res.data)) {
+      const env = getApiEnvelopeFromMutationResult<unknown>(res) as ApiResponse<unknown> | null
+      if (env && isApiSuccess(env)) {
         message.success('Chạy thuật toán thành công')
-      } else {
-        message.error(res.data.message || 'Chạy thuật toán thất bại')
+      } else if (env) {
+        message.error(env.message || 'Chạy thuật toán thất bại')
       }
       queryClient.invalidateQueries({ queryKey: ['scheduling-result', selectedPeriodId] })
       queryClient.invalidateQueries({ queryKey: ['review-periods', semesterId] })
     },
-    onError: (error: any) => {
-      message.error(error.response?.data?.message || 'Lên lịch thất bại')
+    onError: (error: unknown) => {
+      message.error(getApiErrorMessage(error, 'Lên lịch thất bại'))
     },
   })
 
   const resetMutation = useMutation({
     mutationFn: (periodId: number) => schedulingService.reset(periodId),
     onSuccess: (res) => {
-      if (isApiSuccess(res.data)) {
-        message.success(res.data.message || 'Đã reset lịch')
+      const env = getApiEnvelopeFromMutationResult<unknown>(res) as ApiResponse<unknown> | null
+      if (env && isApiSuccess(env)) {
+        message.success(env.message || 'Đã reset lịch')
+      } else if (env) {
+        message.error(env.message || 'Reset lịch thất bại')
       } else {
-        message.error(res.data.message || 'Reset lịch thất bại')
+        message.error('Phản hồi API không hợp lệ sau khi reset.')
       }
       queryClient.invalidateQueries({ queryKey: ['scheduling-result', selectedPeriodId] })
       queryClient.invalidateQueries({ queryKey: ['review-periods', semesterId] })
     },
-    onError: (error: any) => {
-      message.error(error.response?.data?.message || 'Reset lịch thất bại')
+    onError: (error: unknown) => {
+      message.error(getApiErrorMessage(error, 'Reset lịch thất bại'))
     },
   })
 

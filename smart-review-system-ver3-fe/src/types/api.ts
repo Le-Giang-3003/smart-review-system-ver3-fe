@@ -6,9 +6,42 @@ export interface ApiResponse<T> {
   errors?: string[]
 }
 
-export function isApiSuccess<T>(res: ApiResponse<T>): boolean {
+/** Chuẩn hóa mã trạng thái từ BE (camelCase/PascalCase, số hoặc chuỗi). */
+function normalizeApiStatusCode(res: unknown): number | undefined {
+  if (res == null || typeof res !== 'object') return undefined
+  const o = res as Record<string, unknown>
+  const v = o.statusCode ?? o.StatusCode
+  if (typeof v === 'number' && !Number.isNaN(v)) return v
+  if (typeof v === 'string') {
+    const n = parseInt(v, 10)
+    return Number.isNaN(n) ? undefined : n
+  }
+  return undefined
+}
+
+/**
+ * Kết quả mutation khi `mutationFn` trả về `axios` thường là `AxiosResponse`;
+ * `data` thực tế của ApiResponse nằm ở `.data`.
+ */
+export function getApiEnvelopeFromMutationResult<T>(mutationResult: unknown): ApiResponse<T> | null {
+  if (mutationResult == null || typeof mutationResult !== 'object') return null
+  const r = mutationResult as Record<string, unknown>
+  const inner = r.data
+  if (inner != null && typeof inner === 'object' && normalizeApiStatusCode(inner) != null) {
+    return inner as unknown as ApiResponse<T>
+  }
+  if (normalizeApiStatusCode(r) != null) {
+    return r as unknown as ApiResponse<T>
+  }
+  return null
+}
+
+export function isApiSuccess<T>(res: ApiResponse<T> | null | undefined): boolean {
+  if (res == null) return false
   if (typeof res.isSuccess === 'boolean') return res.isSuccess
-  return res.statusCode >= 1000 && res.statusCode < 2000
+  const code = normalizeApiStatusCode(res)
+  if (code == null) return false
+  return code >= 1000 && code < 2000
 }
 
 export interface PaginatedResponse<T> {
